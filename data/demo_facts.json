@@ -1,0 +1,66 @@
+[
+  {
+    "fact_id": "hr_leave_20_days",
+    "text": "Every employee receives 20 days of paid leave per year.",
+    "doc_id": "hr_policy",
+    "page": 2,
+    "allowed_roles": ["admin", "hr", "finance", "intern"],
+    "is_public": true
+  },
+  {
+    "fact_id": "leave_summary_20_days",
+    "text": "Every employee receives 20 days of paid leave per year.",
+    "doc_id": "leave_policy_summary",
+    "page": 1,
+    "allowed_roles": ["admin", "hr", "finance", "intern"],
+    "is_public": true
+  },
+  {
+    "fact_id": "leave_encashment_45_days",
+    "text": "Executive leave encashment is capped at 45 days.",
+    "doc_id": "leave_policy_full",
+    "page": 2,
+    "allowed_roles": ["hr", "admin"],
+    "is_public": false
+  },
+  {
+    "fact_id": "leave_carryforward_8_days",
+    "text": "Unused leave carry-forward is limited to 8 days.",
+    "doc_id": "leave_policy_full",
+    "page": 3,
+    "allowed_roles": ["hr", "admin"],
+    "is_public": false
+  },
+  {
+    "fact_id": "board_marketing_budget",
+    "text": "The board approved a marketing budget of Rs. 12 lakh for Q3.",
+    "doc_id": "board_minutes",
+    "page": 4,
+    "allowed_roles": ["admin"],
+    "is_public": false
+  },
+  {
+    "fact_id": "board_finance_approval",
+    "text": "Approval was recorded by the finance head.",
+    "doc_id": "board_minutes",
+    "page": 5,
+    "allowed_roles": ["admin"],
+    "is_public": false
+  },
+  {
+    "fact_id": "contract_value_total",
+    "text": "The contract value is Rs. 6,20,000.",
+    "doc_id": "vendor_contract",
+    "page": 2,
+    "allowed_roles": ["finance", "admin"],
+    "is_public": false
+  },
+  {
+    "fact_id": "finance_memo_invoice_1042",
+    "text": "Invoice 1042 total is Rs. 48,500.",
+    "doc_id": "finance_memo",
+    "page": 1,
+    "allowed_roles": ["finance", "admin"],
+    "is_public": false
+  }
+]
