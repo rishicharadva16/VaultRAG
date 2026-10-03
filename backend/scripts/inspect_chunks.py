@@ -1,14 +1,15 @@
 """
 Inspect stored chunks in Qdrant (read helper for verification and debugging).
 
-Usage: python scripts/inspect_chunks.py [--doc-id <slug>] [--limit 5] [--collection <name>]
+Usage:
+  python scripts/inspect_chunks.py [--doc-id <slug>] [--limit 5] [--collection <name>]
 """
 
 import argparse
-import os
 import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.config import settings
 from app.index.store import SecureStore
@@ -37,18 +38,18 @@ def main():
     for idx, pt in enumerate(points, 1):
         payload = pt.payload or {}
         chunk_id = payload.get("chunk_id", "N/A")
+        source_id = payload.get("source_id", "N/A")
+        source_doc = payload.get("source_doc", "N/A")
+        tokens = payload.get("acl_tokens", [])
+        tokens_str = ", ".join(tokens) if tokens else "(none)"
+        corpus = payload.get("corpus", "main")
         page = payload.get("page", "N/A")
-        source_name = payload.get("source_name", "N/A")
-        roles = payload.get("allowed_roles", [])
-        roles_str = ",".join(roles) if roles else "(none)"
-        classification = payload.get("classification", "N/A")
-        is_public = payload.get("is_public", False)
         text = payload.get("text", "")
         snippet = text.replace("\n", " ").strip()[:80] + ("..." if len(text) > 80 else "")
 
         print(f"[{idx}] Chunk ID: {chunk_id}")
-        print(f"    Page: {page} | Source: {source_name} | Clr: {classification} | Public: {is_public}")
-        print(f"    Allowed Roles: {roles_str}")
+        print(f"    Source ID: {source_id} | File: {source_doc} | Corpus: {corpus} | Page: {page}")
+        print(f"    ACL Tokens: {tokens_str}")
         print(f"    Text Preview: {snippet}")
         print()
 

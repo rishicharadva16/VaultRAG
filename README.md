@@ -6,28 +6,63 @@
 
 ## The Problem
 
-Standard RAG systems treat the vector store as a flat, open index. If sensitive HR, finance, and legal documents are indexed together, any user can retrieve any chunk. VaultRAG solves this by enforcing access control **inside** every retrieval query, ensuring users only ever receive chunks their roles, user ID, and classification level permit.
+Standard RAG systems treat the vector store as a flat, open index. If sensitive HR, finance, and operational documents are indexed together, any user can retrieve any chunk. VaultRAG solves this by enforcing access control **inside** every retrieval query using discrete **permission tokens**, ensuring users only ever receive chunks their roles, employee ID, department, or individual grants permit.
 
 ---
 
 ## Architecture
 
 ```
-User → API → Auth (JWT + DB reload) → Query Builder → SecureStore → Qdrant
+User → API → Auth (JWT + DB reload) → Token Generator → Query Builder → SecureStore → Qdrant
                                             ↑
-                                    ACL filter injected
-                               (roles, clearance, ownership)
+                                   Permission Tokens
+                     (role:*, emp:*, dept:*, rolemp:*, usr:*)
 ```
 
-1. **Ingest**: PDF documents are loaded per page (PyMuPDF for text, pdfplumber for structured tables), chunked within page boundaries (never crossing pages), tagged with ACL metadata, and indexed into Qdrant with named dense (`bge-m3`, 1024-dim) and sparse (BM25 with IDF modifier) vectors.
-2. **Tag**: Every chunk carries a complete ACL payload (`allowed_roles`, `allowed_users`, `classification`, `owner_id`, `is_public`).
+1. **Ingest**: PDF documents are loaded per page (PyMuPDF for text, pdfplumber for structured tables), markdown and HTML documents are loaded preserving comments and hidden elements, chunked within page boundaries (never crossing pages), tagged with ACL permission tokens, and indexed into Qdrant with named dense (`bge-m3`, 1024-dim) and sparse (BM25 with IDF modifier) vectors.
+2. **Permission Tokens**: Every chunk carries an `acl_tokens` payload (e.g. `role:employee`, `emp:E1004`, `dept:Engineering`).
 3. **Index**: The `SecureStore` gateway is the **sole gateway** in the codebase allowed to interact with Qdrant.
-4. **Filter inside retrieval**: The server constructs a Qdrant filter from the authenticated user's DB record. The filter executes **inside** the vector search — not post-query. Chunks the user cannot see are never retrieved or loaded into memory.
+4. **Filter inside retrieval**: The server matches user permission tokens against chunk `acl_tokens` inside Qdrant. Chunks the user cannot see are never retrieved or loaded into memory.
 5. **Verified citations**: Grounded responses reference original document names and page numbers for transparent verification.
 
 ### Why Access Control Lives in the Server, Not in Qdrant
 
 Qdrant has no built-in role-based access control engine. All authorization logic comes from the filter built by server-side code through the single `SecureStore` gateway and applied inside the vector search. The client never supplies or modifies filter criteria.
+
+---
+
+## Northwind Dataset & Permission Model
+
+VaultRAG is evaluated against the Northwind Industrial Pvt Ltd dataset (`data/northwind/rag_demo_dataset`):
+- **Roles**: `employee`, `manager`, `hr_admin`, `finance_admin`, `admin`
+- **System Admin**: In the Northwind model, system admin has no document ACLs (can only manage users/system).
+- **Fail-Closed**: Any chunk without permission tokens is rejected. Any document not listed in `acl_policy.json` is rejected.
+
+### Permission Token Syntax
+
+| Token Format | Meaning | Example |
+|---|---|---|
+| `role:<role>` | Role-based document access | `role:employee`, `role:hr_admin` |
+| `emp:<id>` | Individual employee access (e.g. ID card, hotel receipt) | `emp:E1004`, `emp:E1010` |
+| `dept:<dept>` | Department-level document access | `dept:Engineering` |
+| `rolemp:<r>@<id>` | Role-employee specific binding | `rolemp:manager@E1003` |
+| `usr:<id>` | User account grant | `usr:u_asha` |
+
+---
+
+## Demo Accounts
+
+All demo accounts share the password `changeme123`:
+
+| User ID | Name | Email | Roles | Employee ID | Department |
+|---|---|---|---|---|---|
+| `u_asha` | Asha Patel | `asha.patel@northwind.example` | `employee` | `E1004` | Engineering |
+| `u_neha` | Neha Desai | `neha.desai@northwind.example` | `employee` | `E1006` | Sales |
+| `u_ravi` | Ravi Menon | `ravi.menon@northwind.example` | `manager` | `E1003` | Engineering |
+| `u_dev` | Dev Joshi | `dev.joshi@northwind.example` | `manager` | `E1005` | Sales |
+| `u_meera` | Meera Iyer | `meera.iyer@northwind.example` | `hr_admin` | `E1001` | HR |
+| `u_karan` | Karan Shah | `karan.shah@northwind.example` | `finance_admin` | `E1002` | Finance |
+| `u_admin` | System Admin | `admin@northwind.example` | `admin` | None | None |
 
 ---
 
@@ -37,7 +72,6 @@ Qdrant has no built-in role-based access control engine. All authorization logic
 - Python 3.11+
 - Docker Desktop (for Postgres and Qdrant)
 - Git
-- Ollama (installed natively on host, not in Docker)
 
 ---
 
@@ -47,8 +81,7 @@ Run all commands from Windows Command Prompt (`cmd`):
 
 ```cmd
 :: 1. Clone and enter repo
-git clone <your-repo-url> VaultRAG
-cd VaultRAG
+cd D:\VaultRAG
 
 :: 2. Create and activate virtual environment
 python -m venv .venv
@@ -59,13 +92,12 @@ pip install -r requirements.txt
 
 :: 4. Configure environment
 copy .env.example .env
-:: Edit .env and set JWT_SECRET to a secure random string:
-:: python -c "import secrets; print(secrets.token_urlsafe(64))"
+:: Edit .env and set JWT_SECRET to a secure random string
 
 :: 5. Start infrastructure (PostgreSQL & Qdrant)
 docker compose up -d
 
-:: 6. Initialize database schema & seed demo users
+:: 6. Initialize database schema & seed Northwind users
 cd backend
 python scripts\create_tables.py
 python scripts\seed_users.py
@@ -74,34 +106,30 @@ python scripts\seed_users.py
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-> **Note on Host Binding**: Always use `--host 127.0.0.1` for local development. Using `--host 0.0.0.0` is strictly for **LAN demos only** and exposes the unencrypted API to all devices on your local network.
-
 ---
 
-## Step 2: Chunk Schema, Qdrant Collection & PDF Ingestion
+## Ingestion & Verification Commands
 
-### Step 2 Pipeline Execution
-
-In a new terminal (with `.venv` activated, from `D:\VaultRAG\backend`):
+In a terminal with `.venv` active, from `D:\VaultRAG\backend`:
 
 ```cmd
-:: 1. Verify authentication & RBAC smoke tests
+:: 1. Check authentication across all 7 Northwind accounts
 python scripts\check_login.py
 
-:: 2. Create / verify Qdrant collection with named vectors & payload indexes
-python scripts\create_collection.py
+:: 2. Reset Qdrant collections (drops and recreates main collection with indexes)
+python scripts\reset_collection.py
 
-:: 3. Generate the 6 demo PDF documents with ground-truth facts
-python scripts\make_demo_pdfs.py
+:: 3. Ingest the 7 dataset PDFs and 3 poison files
+python scripts\ingest_corpus.py --include-poison
 
-:: 4. Ingest demo PDFs with ACL tagging & audit logging
-python scripts\ingest_pdfs.py
+:: 4. Inspect ingested chunks in Qdrant
+python scripts\inspect_chunks.py --limit 5
+python scripts\inspect_chunks.py --doc-id hr_policy
 
-:: 5. Inspect stored chunks in Qdrant
-python scripts\inspect_chunks.py
-python scripts\inspect_chunks.py --doc-id board_minutes
+:: 5. Verify ACL permission matrix against reference acl.py (140 checks, 100% match)
+python scripts\acl_matrix.py
 
-:: 6. Run the full test suite
+:: 6. Run the complete test suite (41 passing tests)
 pytest tests\ -v
 ```
 
@@ -114,57 +142,31 @@ Every chunk point stored in Qdrant has a deterministic UUID5 point ID (`point_id
 | Field | Type | Description |
 |---|---|---|
 | `chunk_id` | `str` | Deterministic ID: `<doc_id>-p<page>-c<n>` (page 1-based, chunk 1-based) |
-| `doc_id` | `str` | Normalized slug identifier (e.g. `board_minutes`) |
-| `source_type` | `Literal["pdf", "image", "db_row"]` | Origin media type |
-| `source_name` | `str` | Original file name (e.g. `board_minutes.pdf`) |
-| `page` | `int \| None` | 1-based page number (never spans multiple pages) |
-| `bbox` | `list[float] \| None` | Bounding box coordinates (reserved for Step 4 OCR) |
-| `row_id` | `str \| None` | Database row identifier (reserved for Step 4) |
+| `doc_id` | `str` | Normalized slug identifier (e.g. `hr_policy`) |
+| `source_doc` | `str` | Original file name (e.g. `hr_policy.pdf`) |
+| `source_id` | `str` | ACL policy key (e.g. `pdf:hr_policy.pdf`, `poison:poison_02...`) |
+| `source_type` | `Literal["pdf", "md", "html", "image", "db_row"]` | Origin media type |
+| `source_name` | `str` | Stem identifier |
+| `corpus` | `Literal["main", "poison_test"]` | Target corpus partition |
+| `page` | `int \| None` | 1-based page number for PDFs (>= 1) |
+| `bbox` | `list[float] \| None` | Bounding box coordinates (reserved for OCR) |
+| `table` | `str \| None` | Serialized table descriptor |
+| `row_pk` | `str \| None` | Database row identifier (reserved for row ingestion) |
 | `chunk_type` | `Literal["text", "table"]` | Text chunk or serialized table row |
 | `text` | `str` | Non-empty stripped text content |
-| `owner_id` | `str` | Uploader user UUID (required) |
-| `allowed_roles` | `list[str]` | Allowed roles (`admin` always included automatically) |
-| `allowed_users` | `list[str]` | Specific user UUIDs granted access |
-| `classification` | `int` | Clearance level required (1 = Public, 2 = Internal/Confidential, 3 = Secret/Board) |
-| `is_public` | `bool` | If `True`, visible to all authenticated users |
+| `owner_id` | `str` | Owner identifier (`u_admin`) |
+| `allowed_roles` | `list[str]` | Allowed roles from `ROLES` |
+| `allowed_employees` | `list[str]` | Explicit employee IDs granted access |
+| `allowed_departments` | `list[str]` | Explicit departments granted access |
+| `acl_tokens` | `list[str]` | Non-empty list of generated permission tokens |
+| `classification_label` | `str` | E.g. `internal`, `confidential` |
 | `deleted` | `bool` | Soft-deletion flag |
 | `created_at` | `str` | ISO 8601 UTC timestamp |
 
 ### Payload Indexes in Qdrant
 The `SecureStore` gateway automatically ensures payload indexes for fast filtered retrieval:
-- **Keyword**: `allowed_roles`, `allowed_users`, `owner_id`, `doc_id`, `source_type`
-- **Integer**: `classification`
-- **Bool**: `is_public`, `deleted`
-
----
-
-## ACL Manifest & Demo Documents
-
-Permissions are data-driven via `data\acl_manifest.json`. During ingestion, owner and user emails are resolved to user UUIDs from PostgreSQL:
-
-| Document | Owner | Allowed Roles | Clr | Visibility | Ground-Truth Content & Facts |
-|---|---|---|---|---|---|
-| `hr_policy.pdf` | Rahul (`hr`) | admin, hr, finance, intern | 1 | Public | Page 2: *"Every employee receives 20 days of paid leave per year."* |
-| `leave_policy_summary.pdf` | Rahul (`hr`) | admin, hr, finance, intern | 1 | Public | Page 1: *"Every employee receives 20 days of paid leave per year."* |
-| `leave_policy_full.pdf` | Rahul (`hr`) | hr, admin | 2 | Confidential | Page 2: *"Executive leave encashment is capped at 45 days."*<br>Page 3: *"Unused leave carry-forward is limited to 8 days."* |
-| `board_minutes.pdf` | Priya (`admin`) | admin | 3 | Board Only | Page 4: *"The board approved a marketing budget of Rs. 12 lakh for Q3."*<br>Page 5: *"Approval was recorded by the finance head."* |
-| `vendor_contract.pdf` | Meera (`finance`) | finance, admin | 2 | Confidential | Page 2: Structured fee schedule table + text *"The contract value is Rs. 6,20,000."* |
-| `finance_memo.pdf` | Meera (`finance`) | finance, admin | 2 | Confidential | Page 1: *"Invoice 1042 total is Rs. 48,500."* |
-
-### Known Trade-offs
-1. **Dual Representation of Tables**: Table text extracted by PyMuPDF appears in page text chunks, while `pdfplumber` extracts structured `table` chunks with `Header: Value` formatting. Both are preserved to maximize dense semantic recall and sparse exact keyword retrieval.
-2. **Scanned PDFs**: Pages with no extractable text or tables trigger a warning and are recorded in the ingestion summary. OCR processing for scanned documents is deferred to Step 4.
-
----
-
-## Demo Users & Roles
-
-| Name | Email | Role(s) | Clearance | Demo Password |
-|---|---|---|---|---|
-| **Priya** | `priya@vaultrag.local` | `admin` | 3 | `changeme123` |
-| **Rahul** | `rahul@vaultrag.local` | `hr` | 2 | `changeme123` |
-| **Meera** | `meera@vaultrag.local` | `finance` | 2 | `changeme123` |
-| **Arjun** | `arjun@vaultrag.local` | `intern` | 1 | `changeme123` |
+- **Keyword**: `acl_tokens`, `doc_id`, `source_doc`, `source_type`, `corpus`, `owner_id`
+- **Bool**: `deleted`
 
 ---
 
@@ -173,53 +175,16 @@ Permissions are data-driven via `data\acl_manifest.json`. During ingestion, owne
 1. **Identity only in JWT**: Token payload carries identity (`sub`), timestamps (`iat`, `exp`), and unique ID (`jti`). Roles and clearance are **never** in the token.
 2. **Live DB authorization**: Roles and active status are reloaded from PostgreSQL on every request. Admin role revocations or deactivations take effect immediately.
 3. **Server-side query filtering**: Clients cannot pass or alter filter parameters.
-4. **Fail closed**: Chunks with missing or invalid ACL metadata are rejected before embedding. Unlisted manifest files default to admin-only classification 3.
+4. **Fail closed**: Chunks with missing or empty permission tokens are rejected before embedding. Unlisted documents cannot be ingested.
 5. **Single Gateway**: `app/index/store.py` (`SecureStore`) is the only module allowed to import `qdrant_client`.
 
 ---
 
-## API & Authentication
+## Test Suites
 
-### Interactive Swagger Docs (`/docs`)
-1. Navigate to `http://127.0.0.1:8000/docs`.
-2. Call `POST /auth/login` with your demo credentials.
-3. Copy the returned `access_token`.
-4. Click the **Authorize** button at the top right of the Swagger UI, paste the token, and click **Authorize**.
-5. Test protected endpoints such as `GET /me` or `GET /admin/users`.
-
-### Endpoints
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `GET` | `/health` | None | Postgres & Qdrant health check |
-| `POST` | `/auth/login` | None | Authenticate with email & password |
-| `POST` | `/auth/register` | None | Self sign-up (assigned no roles, clearance 1) |
-| `GET` | `/auth/me` | Bearer | Current user identity, roles, and clearance |
-| `GET` | `/me` | Bearer | Top-level alias of `/auth/me` |
-| `POST` | `/admin/users` | Admin | Create user with explicit roles & clearance |
-| `GET` | `/admin/users` | Admin | List all registered users |
-| `PUT` | `/admin/users/{id}/roles` | Admin | Update user roles and clearance |
-| `PUT` | `/admin/users/{id}/active` | Admin | Activate / deactivate user account |
-
-### CORS & Frontend Hosting
-The API supports configurable origins via `CORS_ORIGINS` in `.env`. Wildcards (`*`) and `null` origins are strictly forbidden.
-
-When developing a frontend, serve it via HTTP:
-```cmd
-cd frontend
-python -m http.server 8080
-```
-> Opening HTML files directly via double-click (`file://`) sends an origin of `null`, which is blocked by CORS security policy.
-
----
-
-## Roadmap
-
-- [x] **Step 1**: Foundation — FastAPI, PostgreSQL, Qdrant health check, JWT auth, RBAC, audit logging
-- [x] **Step 2**: Chunk schema, Qdrant collection, manifest permissions, ReportLab demo PDFs, PDF ingestion pipeline
-- [ ] **Step 3**: ACL filter builder and secure hybrid search (dense + sparse with RRF fusion)
-- [ ] **Step 4**: Database row ingestion and OCR pipeline for scanned documents
-- [ ] **Step 5**: Grounded answers generation with citation verifier
-- [ ] **Step 6**: Web frontend UI connection
-- [ ] **Step 7**: Document upload, sharing, and dynamic permission management
-- [ ] **Step 8**: Evaluation suite and leak test demonstration
+All 41 tests pass across the test suite:
+- `tests/test_auth.py` (21 tests): Northwind login, `/auth/me` and `/me` identity, role reloading, token validation, password bcrypt limits, CORS.
+- `tests/test_admin.py` (6 tests): Non-admin 403, admin user creation with valid roles, self-registration with empty roles, deactivation 401, audit logging.
+- `tests/test_health.py` (1 test): Postgres & Qdrant health check.
+- `tests/test_principals.py` (6 tests): User and document token generation, admin and empty user isolation, exact 100% matrix match across all 19 documents against reference `acl.py`.
+- `tests/test_dataset_ingestion.py` (7 tests): Fast fake-embedder ingestion of 7 PDFs, ground-truth evaluation coverage (>= 90% on `eval_questions.json`), poison file comment and `display:none` preservation, ingestion idempotency, payload indexes, and `bge-m3` embedding dimension check.

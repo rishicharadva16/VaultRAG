@@ -6,8 +6,8 @@ RULE: This module is the ONLY code in the project allowed to import qdrant_clien
       This ensures every query passes through ACL filtering.
 
 PAYLOAD DESIGN:
-    Qdrant payloads accept lists natively, so allowed_roles and allowed_users
-    are stored as plain JSON arrays – no encoding tricks needed.
+    Qdrant payloads accept lists natively, so acl_tokens is stored as a plain
+    JSON array of permission strings (role:*, emp:*, dept:*, rolemp:*, usr:*).
 """
 
 from qdrant_client import QdrantClient, models
@@ -15,9 +15,9 @@ from qdrant_client import QdrantClient, models
 from app.config import settings
 
 # Payload index definitions: (field_name, schema_type)
-_KEYWORD_FIELDS = ["allowed_roles", "allowed_users", "owner_id", "doc_id", "source_type"]
-_INTEGER_FIELDS = ["classification"]
-_BOOL_FIELDS = ["is_public", "deleted"]
+_KEYWORD_FIELDS = ["acl_tokens", "doc_id", "source_doc", "source_type", "corpus", "owner_id"]
+_INTEGER_FIELDS: list[str] = []
+_BOOL_FIELDS = ["deleted"]
 
 
 class SecureStore:
@@ -37,6 +37,21 @@ class SecureStore:
             return {"status": "error", "detail": str(exc)}
 
     # ── Collection management ─────────────────────────────────
+
+    def drop_collection(self, collection: str | None = None) -> None:
+        """Drop collection if it exists (safe / idempotent)."""
+        name = collection or settings.QDRANT_COLLECTION
+        try:
+            existing = [c.name for c in self._client.get_collections().collections]
+            if name in existing:
+                self._client.delete_collection(name)
+        except Exception as exc:
+            # Re-check or ignore if already gone
+            pass
+
+    def delete_collection(self, collection: str) -> None:
+        """Delete collection entirely (alias for drop_collection)."""
+        self.drop_collection(collection)
 
     def ensure_collection(
         self, dense_size: int, collection: str | None = None,
@@ -212,10 +227,6 @@ class SecureStore:
         """Return collection info (for tests checking payload indexes)."""
         name = collection or settings.QDRANT_COLLECTION
         return self._client.get_collection(name)
-
-    def delete_collection(self, collection: str) -> None:
-        """Delete a collection entirely (for test cleanup)."""
-        self._client.delete_collection(collection)
 
     # ── Search (Step 3) ───────────────────────────────────────
 

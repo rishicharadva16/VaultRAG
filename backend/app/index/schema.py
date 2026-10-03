@@ -1,4 +1,4 @@
-"""Chunk schema: pydantic v2 model for Qdrant point payloads."""
+"""Chunk schema: pydantic v2 model for Qdrant point payloads with permission tokens."""
 
 import uuid
 from datetime import datetime, timezone
@@ -6,7 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, field_validator, model_validator
 
-ROLES = {"admin", "hr", "finance", "intern"}
+from app.security.principals import doc_tokens
+from app.security.roles import ROLES
 
 # Fixed namespace for deterministic point ids
 QDRANT_ID_NAMESPACE = uuid.UUID("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
@@ -20,27 +21,25 @@ def point_id(chunk_id: str) -> str:
 class Chunk(BaseModel):
     chunk_id: str  # "<doc_id>-p<page>-c<n>", page 1-based
     doc_id: str
-    source_type: Literal["pdf", "image", "db_row"]
+    source_doc: str
+    source_id: str
+    source_type: Literal["pdf", "md", "html", "image", "db_row"]
     source_name: str
+    corpus: Literal["main", "poison_test"] = "main"
     page: int | None = None
     bbox: list[float] | None = None
-    row_id: str | None = None
+    table: str | None = None
+    row_pk: str | None = None
     chunk_type: Literal["text", "table"] = "text"
     text: str
     allowed_roles: list[str] = []
-    allowed_users: list[str] = []  # user UUIDs
-    owner_id: str  # user UUID, required
-    classification: int = 1
-    is_public: bool = False
+    allowed_employees: list[str] = []
+    allowed_departments: list[str] = []
+    acl_tokens: list[str] = []
+    classification_label: str = "internal"
+    owner_id: str = "u_admin"
     deleted: bool = False
     created_at: str = ""
-
-    @field_validator("classification")
-    @classmethod
-    def check_classification(cls, v: int) -> int:
-        if v < 1 or v > 3:
-            raise ValueError("classification must be 1, 2, or 3")
-        return v
 
     @field_validator("allowed_roles", mode="before")
     @classmethod
@@ -57,28 +56,32 @@ class Chunk(BaseModel):
             raise ValueError("text must not be empty after stripping")
         return v
 
-    @field_validator("owner_id")
+    @field_validator("page")
     @classmethod
-    def check_owner_id(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("owner_id is required")
+    def check_page(cls, v: int | None) -> int | None:
+        if v is not None and v < 1:
+            raise ValueError("page must be >= 1")
         return v
 
     @model_validator(mode="after")
-    def enforce_acl_defaults(self):
-        # "admin" is always in allowed_roles
-        if "admin" not in self.allowed_roles:
-            self.allowed_roles = ["admin"] + list(self.allowed_roles)
+    def validate_and_compute_tokens(self):
+        if not self.acl_tokens:
+            computed = doc_tokens({
+                "allowed_roles": self.allowed_roles,
+                "allowed_employees": self.allowed_employees,
+                "allowed_departments": self.allowed_departments,
+            })
+            self.acl_tokens = sorted(computed)
 
-        # A chunk with no roles (except admin), no users, and not public
-        # → admin-only with owner added to allowed_users
-        non_admin_roles = [r for r in self.allowed_roles if r != "admin"]
-        if not non_admin_roles and not self.allowed_users and not self.is_public:
-            if self.owner_id not in self.allowed_users:
-                self.allowed_users = [self.owner_id]
+        if not self.acl_tokens:
+            raise ValueError("acl_tokens cannot be empty (fail-closed access control)")
+
+        if self.source_type == "pdf" and self.page is not None and self.page < 1:
+            raise ValueError("PDF page must be >= 1")
 
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
+
         return self
 
     def to_payload(self) -> dict:
