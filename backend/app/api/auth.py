@@ -27,7 +27,7 @@ class RegisterRequest(BaseModel):
     name: str
     email: str
     password: str
-    # Roles and clearance are intentionally absent – never accepted from the client.
+    # Roles, employee_id, and clearance are intentionally absent / ignored – never accepted from self-register.
 
 
 class TokenResponse(BaseModel):
@@ -40,7 +40,9 @@ class MeResponse(BaseModel):
     name: str
     email: str
     roles: list[str]
-    clearance: int
+    employee_id: str | None = None
+    department: str | None = None
+    external_id: str | None = None
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -66,8 +68,11 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         name=body.name,
         email=body.email,
         password_hash=hash_password(body.password),
-        roles=[],       # Self-registered users get no roles
-        clearance=1,    # and lowest clearance
+        roles=[],           # Self-registered users get no roles
+        employee_id=None,   # No employee_id
+        department=None,
+        external_id=None,
+        clearance=1,
     )
     db.add(user)
     db.commit()
@@ -78,6 +83,11 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=MeResponse)
 def me(user: User = Depends(get_current_user)):
     return MeResponse(
-        id=user.id, name=user.name, email=user.email,
-        roles=user.roles or [], clearance=user.clearance,
+        id=user.id,
+        name=user.name,
+        email=user.email,
+        roles=user.roles or [],
+        employee_id=user.employee_id,
+        department=user.department,
+        external_id=user.external_id,
     )

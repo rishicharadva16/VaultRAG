@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     EMBED_MODEL: str = "BAAI/bge-m3"
     SPARSE_MODEL: str = "Qdrant/bm25"
 
+    # Dataset path (relative to repo root)
+    DATASET_DIR: str = "data/northwind/rag_demo_dataset"
+
     model_config = {
         "env_file": str(_env_file) if _env_file.exists() else ".env",
         "env_file_encoding": "utf-8",
@@ -47,6 +50,10 @@ class Settings(BaseSettings):
             o.strip() for o in self.CORS_ORIGINS.split(",")
             if o.strip() and o.strip().lower() != "null"
         ]
+
+    def dataset_path(self) -> Path:
+        """Resolve DATASET_DIR relative to repository root."""
+        return (_repo_root / self.DATASET_DIR).resolve()
 
 
 settings = Settings()

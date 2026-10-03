@@ -18,14 +18,21 @@ async def test_login_succeeds_for_all_seeded_users(client):
 
 
 @pytest.mark.asyncio
+async def test_login_with_northwind_example_domain(client):
+    resp = await client.post("/auth/login", json={"email": "asha.patel@northwind.example", "password": SEED_PASSWORD})
+    assert resp.status_code == 200
+    assert "access_token" in resp.json()
+
+
+@pytest.mark.asyncio
 async def test_wrong_password_returns_401(client):
-    resp = await client.post("/auth/login", json={"email": "priya@vaultrag.local", "password": "wrongpwd1"})
+    resp = await client.post("/auth/login", json={"email": "asha.patel@northwind.example", "password": "wrongpwd1"})
     assert resp.status_code == 401
 
 
 @pytest.mark.asyncio
 async def test_unknown_email_returns_401_same_message(client):
-    resp_wrong_pw = await client.post("/auth/login", json={"email": "priya@vaultrag.local", "password": "wrongpwd1"})
+    resp_wrong_pw = await client.post("/auth/login", json={"email": "asha.patel@northwind.example", "password": "wrongpwd1"})
     resp_unknown = await client.post("/auth/login", json={"email": "nobody@x.com", "password": "wrongpwd1"})
     assert resp_wrong_pw.status_code == 401
     assert resp_unknown.status_code == 401
@@ -33,7 +40,7 @@ async def test_unknown_email_returns_401_same_message(client):
 
 
 @pytest.mark.asyncio
-async def test_me_returns_correct_role(client):
+async def test_me_returns_correct_role_for_all_users(client):
     for u in SEED_USERS:
         resp = await client.post("/auth/login", json={"email": u["email"], "password": SEED_PASSWORD})
         token = resp.json()["access_token"]
@@ -43,8 +50,52 @@ async def test_me_returns_correct_role(client):
 
 
 @pytest.mark.asyncio
+async def test_me_returns_employee_id_and_dept_for_asha(client):
+    resp = await client.post("/auth/login", json={"email": "asha.patel@northwind.example", "password": SEED_PASSWORD})
+    token = resp.json()["access_token"]
+    me = await client.get("/auth/me", headers=auth_header(token))
+    assert me.status_code == 200
+    data = me.json()
+    assert data["employee_id"] == "E1004"
+    assert data["department"] == "Engineering"
+    assert data["external_id"] == "u_asha"
+    assert data["roles"] == ["employee"]
+
+
+@pytest.mark.asyncio
+async def test_me_admin_has_none_employee_id_and_dept(client):
+    resp = await client.post("/auth/login", json={"email": "admin@northwind.example", "password": SEED_PASSWORD})
+    token = resp.json()["access_token"]
+    me = await client.get("/auth/me", headers=auth_header(token))
+    assert me.status_code == 200
+    data = me.json()
+    assert data["employee_id"] is None
+    assert data["department"] is None
+    assert data["roles"] == ["admin"]
+
+
+@pytest.mark.asyncio
+async def test_user_with_empty_roles_gets_200_on_me(client, db):
+    resp = await client.post("/auth/register", json={
+        "name": "NoRolesUser", "email": "noroles@northwind.example", "password": "password123",
+    })
+    assert resp.status_code == 201
+    token = resp.json()["access_token"]
+
+    me = await client.get("/auth/me", headers=auth_header(token))
+    assert me.status_code == 200
+    assert me.json()["roles"] == []
+
+    # Cleanup
+    user = db.query(User).filter(User.email == "noroles@northwind.example").first()
+    if user:
+        db.delete(user)
+        db.commit()
+
+
+@pytest.mark.asyncio
 async def test_tampered_token_returns_401(client):
-    resp = await client.post("/auth/login", json={"email": "priya@vaultrag.local", "password": SEED_PASSWORD})
+    resp = await client.post("/auth/login", json={"email": "asha.patel@northwind.example", "password": SEED_PASSWORD})
     token = resp.json()["access_token"]
     tampered = token[:-4] + "XXXX"
     me = await client.get("/auth/me", headers=auth_header(tampered))
@@ -67,10 +118,10 @@ async def test_expired_token_returns_401(client):
 
 @pytest.mark.asyncio
 async def test_inactive_user_returns_401(client, db):
-    resp = await client.post("/auth/login", json={"email": "arjun@vaultrag.local", "password": SEED_PASSWORD})
+    resp = await client.post("/auth/login", json={"email": "asha.patel@northwind.example", "password": SEED_PASSWORD})
     token = resp.json()["access_token"]
 
-    user = db.query(User).filter(User.email == "arjun@vaultrag.local").first()
+    user = db.query(User).filter(User.email == "asha.patel@northwind.example").first()
     user.active = False
     db.commit()
 
@@ -84,20 +135,20 @@ async def test_inactive_user_returns_401(client, db):
 @pytest.mark.asyncio
 async def test_role_change_reflected_without_new_token(client, db):
     """Changing roles in the DB shows up on /me immediately (no new login needed)."""
-    resp = await client.post("/auth/login", json={"email": "arjun@vaultrag.local", "password": SEED_PASSWORD})
+    resp = await client.post("/auth/login", json={"email": "asha.patel@northwind.example", "password": SEED_PASSWORD})
     token = resp.json()["access_token"]
 
     me = await client.get("/auth/me", headers=auth_header(token))
-    assert me.json()["roles"] == ["intern"]
+    assert me.json()["roles"] == ["employee"]
 
-    user = db.query(User).filter(User.email == "arjun@vaultrag.local").first()
-    user.roles = ["intern", "trainee"]
+    user = db.query(User).filter(User.email == "asha.patel@northwind.example").first()
+    user.roles = ["employee", "manager"]
     db.commit()
 
     me2 = await client.get("/auth/me", headers=auth_header(token))
-    assert "trainee" in me2.json()["roles"]
+    assert "manager" in me2.json()["roles"]
 
-    user.roles = ["intern"]
+    user.roles = ["employee"]
     db.commit()
 
 
@@ -105,7 +156,7 @@ async def test_role_change_reflected_without_new_token(client, db):
 
 @pytest.mark.asyncio
 async def test_me_and_auth_me_return_identical_bodies(client):
-    resp = await client.post("/auth/login", json={"email": "priya@vaultrag.local", "password": SEED_PASSWORD})
+    resp = await client.post("/auth/login", json={"email": "asha.patel@northwind.example", "password": SEED_PASSWORD})
     token = resp.json()["access_token"]
     h = auth_header(token)
 
@@ -157,7 +208,7 @@ async def test_cors_blocks_evil_origin(client):
 @pytest.mark.asyncio
 async def test_register_rejects_7_char_password(client):
     resp = await client.post("/auth/register", json={
-        "name": "Short", "email": "short@test.local", "password": "1234567",
+        "name": "Short", "email": "short@northwind.example", "password": "1234567",
     })
     assert resp.status_code == 422
 
@@ -165,11 +216,11 @@ async def test_register_rejects_7_char_password(client):
 @pytest.mark.asyncio
 async def test_register_accepts_8_char_password(client, db):
     resp = await client.post("/auth/register", json={
-        "name": "Eight", "email": "eight@test.local", "password": "12345678",
+        "name": "Eight", "email": "eight@northwind.example", "password": "12345678",
     })
     assert resp.status_code == 201
     # Cleanup
-    user = db.query(User).filter(User.email == "eight@test.local").first()
+    user = db.query(User).filter(User.email == "eight@northwind.example").first()
     if user:
         db.delete(user)
         db.commit()
@@ -180,7 +231,7 @@ async def test_register_rejects_73_byte_password(client):
     # 73 ASCII chars = 73 bytes, exceeds bcrypt's 72-byte limit
     long_pw = "A" * 73
     resp = await client.post("/auth/register", json={
-        "name": "Long", "email": "long@test.local", "password": long_pw,
+        "name": "Long", "email": "long@northwind.example", "password": long_pw,
     })
     assert resp.status_code == 422
 
@@ -190,6 +241,6 @@ async def test_login_overlong_password_returns_401(client):
     """Over-long password on login returns the same generic 401, not a 500."""
     long_pw = "A" * 100
     resp = await client.post("/auth/login", json={
-        "email": "priya@vaultrag.local", "password": long_pw,
+        "email": "asha.patel@northwind.example", "password": long_pw,
     })
     assert resp.status_code == 401

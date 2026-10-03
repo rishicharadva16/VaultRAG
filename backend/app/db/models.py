@@ -20,7 +20,11 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     roles = Column(ARRAY(String), nullable=False, default=list)
+    # The clearance column is retained for backward compatibility, but nothing reads it for access in the Northwind model.
     clearance = Column(Integer, nullable=False, default=1)
+    employee_id = Column(String, nullable=True)
+    department = Column(String, nullable=True)
+    external_id = Column(String, unique=True, nullable=True, index=True)
     active = Column(Boolean, nullable=False, default=True)
 
 

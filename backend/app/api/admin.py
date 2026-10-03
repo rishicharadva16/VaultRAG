@@ -10,6 +10,7 @@ from app.security.passwords import (
     PasswordTooLong, PasswordTooShort,
     hash_password, validate_password,
 )
+from app.security.roles import ROLES
 from app.security.users import get_user, get_user_by_email
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -20,12 +21,15 @@ class CreateUserRequest(BaseModel):
     email: str
     password: str
     roles: list[str] = []
+    employee_id: str | None = None
+    department: str | None = None
+    external_id: str | None = None
     clearance: int = 1
 
 
 class UpdateRolesRequest(BaseModel):
     roles: list[str]
-    clearance: int
+    clearance: int = 1
 
 
 class UpdateActiveRequest(BaseModel):
@@ -37,8 +41,20 @@ class UserOut(BaseModel):
     name: str
     email: str
     roles: list[str]
-    clearance: int
+    employee_id: str | None = None
+    department: str | None = None
+    external_id: str | None = None
+    clearance: int = 1
     active: bool
+
+
+def _validate_roles(roles: list[str]) -> None:
+    for r in roles:
+        if r not in ROLES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid role: {r!r}. Allowed roles: {sorted(ROLES)}",
+            )
 
 
 @router.post("/users", response_model=UserOut, status_code=status.HTTP_201_CREATED)
@@ -47,8 +63,7 @@ def create_user(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
-    if body.clearance < 1 or body.clearance > 3:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Clearance must be 1-3")
+    _validate_roles(body.roles)
 
     try:
         validate_password(body.password)
@@ -58,19 +73,37 @@ def create_user(
     if get_user_by_email(db, body.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
+    if body.external_id:
+        existing_ext = db.query(User).filter(User.external_id == body.external_id).first()
+        if existing_ext:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="external_id already in use")
+
     user = User(
         name=body.name,
         email=body.email,
         password_hash=hash_password(body.password),
         roles=body.roles,
+        employee_id=body.employee_id,
+        department=body.department,
+        external_id=body.external_id,
         clearance=body.clearance,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
 
-    write_audit(db, user_id=admin.id, event="admin.create_user",
-                details={"target": user.id, "email": user.email, "roles": user.roles, "clearance": user.clearance})
+    write_audit(
+        db,
+        user_id=admin.id,
+        event="admin.create_user",
+        details={
+            "target": user.id,
+            "email": user.email,
+            "roles": user.roles,
+            "employee_id": user.employee_id,
+            "external_id": user.external_id,
+        },
+    )
     return _to_out(user)
 
 
@@ -89,8 +122,7 @@ def update_roles(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
-    if body.clearance < 1 or body.clearance > 3:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Clearance must be 1-3")
+    _validate_roles(body.roles)
 
     user = get_user(db, user_id)
     if user is None:
@@ -102,9 +134,12 @@ def update_roles(
     db.commit()
     db.refresh(user)
 
-    write_audit(db, user_id=admin.id, event="admin.update_roles",
-                details={"target": user_id, "old": old,
-                         "new": {"roles": user.roles, "clearance": user.clearance}})
+    write_audit(
+        db,
+        user_id=admin.id,
+        event="admin.update_roles",
+        details={"target": user_id, "old": old, "new": {"roles": user.roles, "clearance": user.clearance}},
+    )
     return _to_out(user)
 
 
@@ -124,13 +159,24 @@ def update_active(
     db.commit()
     db.refresh(user)
 
-    write_audit(db, user_id=admin.id, event="admin.update_active",
-                details={"target": user_id, "old_active": old_active, "new_active": user.active})
+    write_audit(
+        db,
+        user_id=admin.id,
+        event="admin.update_active",
+        details={"target": user_id, "old_active": old_active, "new_active": user.active},
+    )
     return _to_out(user)
 
 
 def _to_out(user: User) -> UserOut:
     return UserOut(
-        id=user.id, name=user.name, email=user.email,
-        roles=user.roles or [], clearance=user.clearance, active=user.active,
+        id=user.id,
+        name=user.name,
+        email=user.email,
+        roles=user.roles or [],
+        employee_id=user.employee_id,
+        department=user.department,
+        external_id=user.external_id,
+        clearance=user.clearance,
+        active=user.active,
     )

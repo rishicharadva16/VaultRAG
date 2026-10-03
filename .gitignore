@@ -43,3 +43,8 @@ coverage.xml
 
 # Logs
 *.log
+powershell.cmd
+
+# Datasets (read-only)
+data/northwind/
+

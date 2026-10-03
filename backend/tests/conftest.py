@@ -47,26 +47,53 @@ TestSession = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 SEED_PASSWORD = "changeme123"
 
 SEED_USERS = [
-    {"name": "Priya",  "email": "priya@vaultrag.local",  "roles": ["admin"],   "clearance": 3},
-    {"name": "Rahul",  "email": "rahul@vaultrag.local",  "roles": ["hr"],      "clearance": 2},
-    {"name": "Meera",  "email": "meera@vaultrag.local",  "roles": ["finance"], "clearance": 2},
-    {"name": "Arjun",  "email": "arjun@vaultrag.local",  "roles": ["intern"],  "clearance": 1},
+    {"user_id": "u_asha",  "name": "Asha Patel",   "email": "asha.patel@northwind.example",   "roles": ["employee"],      "employee_id": "E1004", "department": "Engineering"},
+    {"user_id": "u_neha",  "name": "Neha Desai",   "email": "neha.desai@northwind.example",   "roles": ["employee"],      "employee_id": "E1006", "department": "Sales"},
+    {"user_id": "u_ravi",  "name": "Ravi Menon",   "email": "ravi.menon@northwind.example",   "roles": ["manager"],       "employee_id": "E1003", "department": "Engineering"},
+    {"user_id": "u_dev",   "name": "Dev Joshi",    "email": "dev.joshi@northwind.example",    "roles": ["manager"],       "employee_id": "E1005", "department": "Sales"},
+    {"user_id": "u_meera", "name": "Meera Iyer",   "email": "meera.iyer@northwind.example",   "roles": ["hr_admin"],      "employee_id": "E1001", "department": "HR"},
+    {"user_id": "u_karan", "name": "Karan Shah",   "email": "karan.shah@northwind.example",   "roles": ["finance_admin"], "employee_id": "E1002", "department": "Finance"},
+    {"user_id": "u_admin", "name": "System Admin", "email": "admin@northwind.example",        "roles": ["admin"],         "employee_id": None,    "department": None},
 ]
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
-    """Create tables and seed users once per test session."""
+    """Create tables, run migrations, and seed users once per test session."""
     Base.metadata.create_all(bind=engine)
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id VARCHAR;"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR;"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS external_id VARCHAR;"))
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_external_id ON users (external_id);"))
+        conn.commit()
+
     db = TestSession()
     try:
         pw_hash = hash_password(SEED_PASSWORD)
         for u in SEED_USERS:
-            if not db.query(User).filter(User.email == u["email"]).first():
+            existing = db.query(User).filter(
+                (User.email == u["email"]) | (User.external_id == u["user_id"])
+            ).first()
+            if existing:
+                existing.name = u["name"]
+                existing.email = u["email"]
+                existing.password_hash = pw_hash
+                existing.roles = u["roles"]
+                existing.employee_id = u["employee_id"]
+                existing.department = u["department"]
+                existing.external_id = u["user_id"]
+                existing.active = True
+            else:
                 db.add(User(
-                    name=u["name"], email=u["email"],
+                    name=u["name"],
+                    email=u["email"],
                     password_hash=pw_hash,
-                    roles=u["roles"], clearance=u["clearance"],
+                    roles=u["roles"],
+                    employee_id=u["employee_id"],
+                    department=u["department"],
+                    external_id=u["user_id"],
+                    active=True,
                 ))
         db.commit()
     finally:
