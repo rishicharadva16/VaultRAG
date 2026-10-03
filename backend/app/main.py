@@ -26,3 +26,15 @@ app.include_router(admin.router)
 
 # A1: /me as a top-level alias of /auth/me (same handler, same response)
 app.get("/me", response_model=auth.MeResponse, tags=["auth"])(auth.me)
+
+
+@app.get("/", tags=["system"])
+def root():
+    """Root endpoint confirming API status and linking to documentation."""
+    return {
+        "status": "ok",
+        "message": "VaultRAG API is running",
+        "docs": "/docs",
+        "health": "/health",
+        "version": "0.1.0",
+    }
