@@ -75,7 +75,17 @@ async def test_me_admin_has_none_employee_id_and_dept(client):
 
 
 @pytest.mark.asyncio
-async def test_user_with_empty_roles_gets_200_on_me(client, db):
+async def test_register_disabled_by_default_returns_403(client):
+    resp = await client.post("/auth/register", json={
+        "name": "DisabledReg", "email": "disabled@northwind.example", "password": "password123",
+    })
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == "Registration is disabled"
+
+
+@pytest.mark.asyncio
+async def test_user_with_empty_roles_gets_200_on_me(client, db, monkeypatch):
+    monkeypatch.setattr(settings, "ALLOW_SELF_REGISTER", True)
     resp = await client.post("/auth/register", json={
         "name": "NoRolesUser", "email": "noroles@northwind.example", "password": "password123",
     })
@@ -206,7 +216,8 @@ async def test_cors_blocks_evil_origin(client):
 # ── A5: Password validation ──
 
 @pytest.mark.asyncio
-async def test_register_rejects_7_char_password(client):
+async def test_register_rejects_7_char_password(client, monkeypatch):
+    monkeypatch.setattr(settings, "ALLOW_SELF_REGISTER", True)
     resp = await client.post("/auth/register", json={
         "name": "Short", "email": "short@northwind.example", "password": "1234567",
     })
@@ -214,7 +225,8 @@ async def test_register_rejects_7_char_password(client):
 
 
 @pytest.mark.asyncio
-async def test_register_accepts_8_char_password(client, db):
+async def test_register_accepts_8_char_password(client, db, monkeypatch):
+    monkeypatch.setattr(settings, "ALLOW_SELF_REGISTER", True)
     resp = await client.post("/auth/register", json={
         "name": "Eight", "email": "eight@northwind.example", "password": "12345678",
     })
@@ -227,7 +239,8 @@ async def test_register_accepts_8_char_password(client, db):
 
 
 @pytest.mark.asyncio
-async def test_register_rejects_73_byte_password(client):
+async def test_register_rejects_73_byte_password(client, monkeypatch):
+    monkeypatch.setattr(settings, "ALLOW_SELF_REGISTER", True)
     # 73 ASCII chars = 73 bytes, exceeds bcrypt's 72-byte limit
     long_pw = "A" * 73
     resp = await client.post("/auth/register", json={

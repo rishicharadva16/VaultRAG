@@ -22,6 +22,7 @@ def create_tables():
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS department VARCHAR;"))
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS external_id VARCHAR;"))
         conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_external_id ON users (external_id);"))
+        conn.execute(text("ALTER TABLE users DROP COLUMN IF EXISTS clearance;"))
         conn.commit()
 
     print("Done.")

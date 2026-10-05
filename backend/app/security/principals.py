@@ -5,35 +5,52 @@ Permission tokens map access control lists (roles, employees, departments, users
 into discrete, indexable tokens for row- and document-level security.
 """
 
+from dataclasses import dataclass
 from typing import Any
 
 from app.security.roles import ROLES
 
 
-def user_tokens(user: Any) -> set[str]:
+@dataclass(frozen=True)
+class Principal:
+    user_id: str
+    tokens: list[str]
+
+
+def build_principal(user: Any) -> Principal:
     """
-    Generate permission tokens held by a user.
-    `user` can be an SQLAlchemy User model, a dict, or any object with
-    roles, employee_id, department, external_id.
+    Build a security Principal from a database user model or dictionary.
+    Freshly built on every request from DB-loaded user attributes.
+    Tokens generated:
+      role:<role> for each role
+      emp:<employee_id>
+      dept:<department>
+      rolemp:<role>@<employee_id>
+      usr:<user_id>
+    Platform admin role gets ONLY 'role:admin' (which appears in no document ACL).
+    Empty or null source values are skipped.
     """
-    # Extract fields whether user is model or dict
     if isinstance(user, dict):
+        user_id = str(user.get("id") or user.get("user_id") or "")
         roles = user.get("roles") or []
         emp_id = user.get("employee_id")
         dept = user.get("department")
-        ext_id = user.get("external_id") or user.get("user_id")
     else:
+        user_id = str(getattr(user, "id", "") or getattr(user, "user_id", "") or "")
         roles = getattr(user, "roles", None) or []
         emp_id = getattr(user, "employee_id", None)
         dept = getattr(user, "department", None)
-        ext_id = getattr(user, "external_id", None) or getattr(user, "id", None)
-
-    # In Northwind model, system admin and users with no document roles have 0 document tokens
-    filtered_roles = [r for r in roles if r in ROLES and r != "admin"]
-    if not filtered_roles:
-        return set()
 
     tokens: set[str] = set()
+
+    # B3: Platform admin role gets no document tokens beyond role:admin
+    if "admin" in roles:
+        tokens.add("role:admin")
+        return Principal(user_id=user_id, tokens=sorted(tokens))
+
+    filtered_roles = [r for r in roles if r in ROLES and r != "admin"]
+    if not filtered_roles:
+        return Principal(user_id=user_id, tokens=[])
 
     for r in filtered_roles:
         tokens.add(f"role:{r}")
@@ -48,10 +65,18 @@ def user_tokens(user: Any) -> set[str]:
         for r in filtered_roles:
             tokens.add(f"rolemp:{r}@{emp_id}")
 
-    if ext_id:
-        tokens.add(f"usr:{ext_id}")
+    if user_id:
+        tokens.add(f"usr:{user_id}")
 
-    return tokens
+    return Principal(user_id=user_id, tokens=sorted(tokens))
+
+
+def user_tokens(user: Any) -> set[str]:
+    """
+    Generate document permission tokens held by a user as a set.
+    Admin role gets no document tokens (role:admin is not a document token).
+    """
+    return {t for t in build_principal(user).tokens if t != "role:admin"}
 
 
 def doc_tokens(acl: dict) -> set[str]:

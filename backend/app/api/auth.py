@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.db.models import User
 from app.db.session import get_db
 from app.security.deps import get_current_user
@@ -27,7 +28,7 @@ class RegisterRequest(BaseModel):
     name: str
     email: str
     password: str
-    # Roles, employee_id, and clearance are intentionally absent / ignored – never accepted from self-register.
+    # Roles and employee_id are intentionally absent / ignored – never accepted from self-register.
 
 
 class TokenResponse(BaseModel):
@@ -57,6 +58,9 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register(body: RegisterRequest, db: Session = Depends(get_db)):
+    if not settings.ALLOW_SELF_REGISTER:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Registration is disabled")
+
     try:
         validate_password(body.password)
     except (PasswordTooShort, PasswordTooLong) as exc:
@@ -72,7 +76,6 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         employee_id=None,   # No employee_id
         department=None,
         external_id=None,
-        clearance=1,
     )
     db.add(user)
     db.commit()

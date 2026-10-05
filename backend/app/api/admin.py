@@ -24,12 +24,10 @@ class CreateUserRequest(BaseModel):
     employee_id: str | None = None
     department: str | None = None
     external_id: str | None = None
-    clearance: int = 1
 
 
 class UpdateRolesRequest(BaseModel):
     roles: list[str]
-    clearance: int = 1
 
 
 class UpdateActiveRequest(BaseModel):
@@ -44,7 +42,6 @@ class UserOut(BaseModel):
     employee_id: str | None = None
     department: str | None = None
     external_id: str | None = None
-    clearance: int = 1
     active: bool
 
 
@@ -86,7 +83,6 @@ def create_user(
         employee_id=body.employee_id,
         department=body.department,
         external_id=body.external_id,
-        clearance=body.clearance,
     )
     db.add(user)
     db.commit()
@@ -128,9 +124,8 @@ def update_roles(
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    old = {"roles": user.roles, "clearance": user.clearance}
+    old = {"roles": user.roles}
     user.roles = body.roles
-    user.clearance = body.clearance
     db.commit()
     db.refresh(user)
 
@@ -138,7 +133,7 @@ def update_roles(
         db,
         user_id=admin.id,
         event="admin.update_roles",
-        details={"target": user_id, "old": old, "new": {"roles": user.roles, "clearance": user.clearance}},
+        details={"target": user_id, "old": old, "new": {"roles": user.roles}},
     )
     return _to_out(user)
 
@@ -177,6 +172,5 @@ def _to_out(user: User) -> UserOut:
         employee_id=user.employee_id,
         department=user.department,
         external_id=user.external_id,
-        clearance=user.clearance,
         active=user.active,
     )

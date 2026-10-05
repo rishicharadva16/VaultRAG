@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     EMBED_MODEL: str = "BAAI/bge-m3"
     SPARSE_MODEL: str = "Qdrant/bm25"
 
+    # Search & Reranking (Step 3)
+    ALLOW_SELF_REGISTER: bool = False
+    RERANK_ENABLED: bool = False
+    RERANK_CANDIDATES: int = 20
+    RERANK_MODEL: str = "BAAI/bge-reranker-v2-m3"
+    SEARCH_RATE_LIMIT_PER_MINUTE: int = 60
+
     # Dataset path (relative to repo root)
     DATASET_DIR: str = "data/northwind/rag_demo_dataset"
 

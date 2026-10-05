@@ -2,6 +2,7 @@
 
 import pytest
 
+from app.config import settings
 from app.db.models import AuditLog, User
 from tests.conftest import SEED_PASSWORD, auth_header
 
@@ -22,7 +23,7 @@ async def test_non_admin_gets_403(client):
     h = auth_header(token)
     assert (await client.get("/admin/users", headers=h)).status_code == 403
     assert (await client.post("/admin/users", headers=h, json={
-        "name": "X", "email": "x@northwind.example", "password": "password1", "roles": [], "clearance": 1
+        "name": "X", "email": "x@northwind.example", "password": "password1", "roles": []
     })).status_code == 403
 
 
@@ -33,12 +34,11 @@ async def test_admin_creates_user_who_can_login(client, db):
 
     resp = await client.post("/admin/users", headers=h, json={
         "name": "TestUser", "email": "test_admin_create@northwind.example",
-        "password": "testpassword", "roles": ["employee"], "clearance": 2,
+        "password": "testpassword", "roles": ["employee"],
     })
     assert resp.status_code == 201
     data = resp.json()
     assert data["roles"] == ["employee"]
-    assert data["clearance"] == 2
 
     login_resp = await client.post("/auth/login", json={
         "email": "test_admin_create@northwind.example", "password": "testpassword"
@@ -56,7 +56,8 @@ async def test_admin_creates_user_who_can_login(client, db):
 
 
 @pytest.mark.asyncio
-async def test_self_registered_user_has_no_roles(client, db):
+async def test_self_registered_user_has_no_roles(client, db, monkeypatch):
+    monkeypatch.setattr(settings, "ALLOW_SELF_REGISTER", True)
     db.query(User).filter(User.email == "selfreg@northwind.example").delete()
     db.commit()
     try:
@@ -68,14 +69,16 @@ async def test_self_registered_user_has_no_roles(client, db):
 
         me = await client.get("/auth/me", headers=auth_header(token))
         assert me.json()["roles"] == []
+        assert me.json()["employee_id"] is None
     finally:
         db.query(User).filter(User.email == "selfreg@northwind.example").delete()
         db.commit()
 
 
 @pytest.mark.asyncio
-async def test_register_ignores_roles_in_body(client, db):
+async def test_register_ignores_roles_in_body(client, db, monkeypatch):
     """Even if the client sends roles in the register body, they are ignored."""
+    monkeypatch.setattr(settings, "ALLOW_SELF_REGISTER", True)
     db.query(User).filter(User.email == "sneaky@northwind.example").delete()
     db.commit()
     try:
@@ -100,7 +103,7 @@ async def test_deactivating_user_makes_token_return_401(client, db):
 
     resp = await client.post("/admin/users", headers=h, json={
         "name": "ToDeactivate", "email": "deact@northwind.example",
-        "password": "password1", "roles": ["employee"], "clearance": 1,
+        "password": "password1", "roles": ["employee"],
     })
     user_id = resp.json()["id"]
 
@@ -132,7 +135,7 @@ async def test_admin_actions_appear_in_audit_log(client, db):
 
     resp = await client.post("/admin/users", headers=h, json={
         "name": "AuditTest", "email": "audit_test@northwind.example",
-        "password": "password1", "roles": ["employee"], "clearance": 1,
+        "password": "password1", "roles": ["employee"],
     })
     assert resp.status_code == 201
 

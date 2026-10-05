@@ -10,14 +10,40 @@ PAYLOAD DESIGN:
     JSON array of permission strings (role:*, emp:*, dept:*, rolemp:*, usr:*).
 """
 
+from dataclasses import dataclass
+from typing import Any
+
 from qdrant_client import QdrantClient, models
 
 from app.config import settings
+from app.security.principals import Principal
 
 # Payload index definitions: (field_name, schema_type)
 _KEYWORD_FIELDS = ["acl_tokens", "doc_id", "source_doc", "source_type", "corpus", "owner_id"]
 _INTEGER_FIELDS: list[str] = []
 _BOOL_FIELDS = ["deleted"]
+
+
+@dataclass
+class SearchResult:
+    chunk_id: str
+    source_id: str
+    file: str
+    page: int | None
+    corpus: str
+    text: str
+    score: float
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "chunk_id": self.chunk_id,
+            "source_id": self.source_id,
+            "file": self.file,
+            "page": self.page,
+            "corpus": self.corpus,
+            "text": self.text,
+            "score": self.score,
+        }
 
 
 class SecureStore:
@@ -230,8 +256,126 @@ class SecureStore:
 
     # ── Search (Step 3) ───────────────────────────────────────
 
-    # TODO [Step 3 – Search]: add search() method
-    #   - MUST take a required `acl_filter` argument with NO default value
-    #   - Fail closed: if acl_filter is None or missing, raise an error immediately
-    #   - Build a Qdrant Filter from acl_filter and apply it to every query
-    #   - Support hybrid search (dense + sparse with RRF fusion)
+    def search(
+        self,
+        principal: "Principal",
+        query: str | tuple[list[float], dict] | list | dict,
+        top_k: int = 5,
+        include_poison: bool = False,
+        collection: str | None = None,
+    ) -> list["SearchResult"]:
+        """
+        Secure hybrid search with access control filtering.
+        Principal argument is REQUIRED; callers cannot supply raw Qdrant filters.
+        Enforces:
+          - Immediate return [] if principal has no tokens.
+          - Query text trimmed and limited to 500 chars (empty returns []).
+          - top_k clamped to 1..20.
+          - Hybrid retrieval (dense + sparse) fused with RRF.
+          - Access filter (acl_tokens MatchAny principal.tokens) applied to BOTH
+            prefetches and to the final query.
+          - Corpus "poison_test" excluded unless include_poison=True.
+          - Plain SearchResult objects without exposing acl_tokens.
+        """
+        # C2: Fail closed - no tokens means no accessible documents
+        if principal is None or not getattr(principal, "tokens", None):
+            return []
+
+        # C5: Clamp top_k to 1..20
+        top_k = max(1, min(20, int(top_k)))
+
+        # Resolve query vectors
+        dense_vec: list[float]
+        sparse_vec: dict
+
+        if isinstance(query, str):
+            query_text = query.strip()[:500]
+            if not query_text:
+                return []
+            from app.index.embedder import DenseEmbedder, SparseEmbedder
+
+            dense_vec = DenseEmbedder().embed_query(query_text)
+            sparse_vec = SparseEmbedder().embed_sparse_query(query_text)
+        elif isinstance(query, (tuple, list)) and len(query) == 2:
+            dense_vec, sparse_vec = query[0], query[1]
+        elif isinstance(query, dict) and "dense" in query and "sparse" in query:
+            dense_vec, sparse_vec = query["dense"], query["sparse"]
+        else:
+            return []
+
+        # Construct access filter
+        must_conditions: list[models.FieldCondition] = [
+            models.FieldCondition(
+                key="acl_tokens",
+                match=models.MatchAny(any=list(principal.tokens)),
+            )
+        ]
+
+        must_not_conditions: list[models.FieldCondition] = [
+            models.FieldCondition(
+                key="deleted",
+                match=models.MatchValue(value=True),
+            )
+        ]
+
+        if not include_poison:
+            must_not_conditions.append(
+                models.FieldCondition(
+                    key="corpus",
+                    match=models.MatchValue(value="poison_test"),
+                )
+            )
+
+        access_filter = models.Filter(
+            must=must_conditions,
+            must_not=must_not_conditions,
+        )
+
+        name = collection or settings.QDRANT_COLLECTION
+        candidate_limit = max(top_k * 4, 20)
+
+        # C3: Dense and sparse prefetches with access filter
+        dense_prefetch = models.Prefetch(
+            query=dense_vec,
+            using="dense",
+            filter=access_filter,
+            limit=candidate_limit,
+        )
+        sparse_prefetch = models.Prefetch(
+            query=models.SparseVector(
+                indices=sparse_vec["indices"],
+                values=sparse_vec["values"],
+            ),
+            using="sparse",
+            filter=access_filter,
+            limit=candidate_limit,
+        )
+
+        # Outer fusion query with access filter
+        response = self._client.query_points(
+            collection_name=name,
+            prefetch=[dense_prefetch, sparse_prefetch],
+            query=models.FusionQuery(fusion=models.Fusion.RRF),
+            query_filter=access_filter,
+            limit=top_k,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        # C4: Return plain SearchResult objects without acl_tokens
+        results: list[SearchResult] = []
+        for pt in response.points:
+            payload = pt.payload or {}
+            results.append(
+                SearchResult(
+                    chunk_id=str(payload.get("chunk_id", "")),
+                    source_id=str(payload.get("source_id", "")),
+                    file=str(payload.get("source_doc") or payload.get("source_name") or ""),
+                    page=payload.get("page"),
+                    corpus=str(payload.get("corpus", "main")),
+                    text=str(payload.get("text", "")),
+                    score=float(pt.score) if pt.score is not None else 0.0,
+                )
+            )
+
+        return results

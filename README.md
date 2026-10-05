@@ -108,83 +108,100 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 ---
 
-## Ingestion & Verification Commands
+## Step 3: Secure Hybrid Search & Scripts
 
-In a terminal with `.venv` active, from `D:\VaultRAG\backend`:
+### 1. The `/search` Endpoint
+- **URL**: `POST /search`
+- **Auth**: Bearer JWT token required
+- **Body**: `{"query": "...", "top_k": 5, "rerank": false}`
+- **Response**: `{"results": [...], "count": n}`. Each result item contains `chunk_id`, `source_id`, `file`, `page`, `text`, and `score`.
+- **Fail-Closed Security**: When a user queries a forbidden document or a nonexistent document, the response is byte-for-byte identical:
+  ```json
+  {
+    "results": [],
+    "count": 0,
+    "message": "No accessible results found."
+  }
+  ```
+  The server never leaks whether a document exists or how many results were filtered out.
+- **Audit Logging**: Every search is logged to `audit_log` with `user_id`, `timestamp`, `query` (truncated to 200 chars), returned `chunk_ids`, and `count`. Document text is **never** logged.
+- **Rate Limiting**: Configured via `SEARCH_RATE_LIMIT_PER_MINUTE` (default: 60). Excessive queries return `429 Too Many Requests`.
+
+### 2. Demo & Verification Scripts (cmd syntax)
+
+Run from `D:\VaultRAG\backend` with `.venv` active:
 
 ```cmd
-:: 1. Check authentication across all 7 Northwind accounts
+:: Compare search results across all 7 dataset users for any question
+python scripts\compare_users.py "What is the notice period for confirmed employees?"
+python scripts\compare_users.py "What is the Apex vendor contract value?"
+python scripts\compare_users.py "What was decided in the August board meeting?"
+
+:: Run security leak check and retrieval accuracy audit across all eval & attack queries
+python scripts\leak_check.py
+
+:: Check authentication across all 7 Northwind accounts
 python scripts\check_login.py
 
-:: 2. Reset Qdrant collections (drops and recreates main collection with indexes)
-python scripts\reset_collection.py
-
-:: 3. Ingest the 7 dataset PDFs and 3 poison files
-python scripts\ingest_corpus.py --include-poison
-
-:: 4. Inspect ingested chunks in Qdrant
+:: Inspect ingested chunks in Qdrant
 python scripts\inspect_chunks.py --limit 5
-python scripts\inspect_chunks.py --doc-id hr_policy
 
-:: 5. Verify ACL permission matrix against reference acl.py (140 checks, 100% match)
+:: Verify ACL permission matrix against reference acl.py (140 checks, 100% match)
 python scripts\acl_matrix.py
 
-:: 6. Run the complete test suite (41 passing tests)
+:: Run the complete test suite (55 passing tests)
 pytest tests\ -v
 ```
 
 ---
 
-## Chunk Schema (Pydantic v2)
+## Permission Tokens & Access Control
 
-Every chunk point stored in Qdrant has a deterministic UUID5 point ID (`point_id(chunk_id)`) and the following validated payload:
+VaultRAG enforces access control through discrete permission tokens:
+- `role:<role>` — for each active role (e.g. `role:employee`, `role:manager`, `role:hr_admin`, `role:finance_admin`)
+- `emp:<id>` — for the employee's ID (e.g. `emp:E1004`, `emp:E1010`)
+- `dept:<dept>` — for the employee's department (e.g. `dept:Engineering`, `dept:Sales`)
+- `rolemp:<r>@<id>` — role-employee specific binding (e.g. `rolemp:employee@E1004`)
+- `usr:<id>` — user account ID (e.g. `usr:<uuid>`)
 
-| Field | Type | Description |
-|---|---|---|
-| `chunk_id` | `str` | Deterministic ID: `<doc_id>-p<page>-c<n>` (page 1-based, chunk 1-based) |
-| `doc_id` | `str` | Normalized slug identifier (e.g. `hr_policy`) |
-| `source_doc` | `str` | Original file name (e.g. `hr_policy.pdf`) |
-| `source_id` | `str` | ACL policy key (e.g. `pdf:hr_policy.pdf`, `poison:poison_02...`) |
-| `source_type` | `Literal["pdf", "md", "html", "image", "db_row"]` | Origin media type |
-| `source_name` | `str` | Stem identifier |
-| `corpus` | `Literal["main", "poison_test"]` | Target corpus partition |
-| `page` | `int \| None` | 1-based page number for PDFs (>= 1) |
-| `bbox` | `list[float] \| None` | Bounding box coordinates (reserved for OCR) |
-| `table` | `str \| None` | Serialized table descriptor |
-| `row_pk` | `str \| None` | Database row identifier (reserved for row ingestion) |
-| `chunk_type` | `Literal["text", "table"]` | Text chunk or serialized table row |
-| `text` | `str` | Non-empty stripped text content |
-| `owner_id` | `str` | Owner identifier (`u_admin`) |
-| `allowed_roles` | `list[str]` | Allowed roles from `ROLES` |
-| `allowed_employees` | `list[str]` | Explicit employee IDs granted access |
-| `allowed_departments` | `list[str]` | Explicit departments granted access |
-| `acl_tokens` | `list[str]` | Non-empty list of generated permission tokens |
-| `classification_label` | `str` | E.g. `internal`, `confidential` |
-| `deleted` | `bool` | Soft-deletion flag |
-| `created_at` | `str` | ISO 8601 UTC timestamp |
-
-### Payload Indexes in Qdrant
-The `SecureStore` gateway automatically ensures payload indexes for fast filtered retrieval:
-- **Keyword**: `acl_tokens`, `doc_id`, `source_doc`, `source_type`, `corpus`, `owner_id`
-- **Bool**: `deleted`
+### Token Building Rules
+1. Tokens are constructed fresh from the database `User` model on **every request** via `build_principal(user)`.
+2. Tokens **never** come from request bodies, query strings, or JWT claims.
+3. System Admin (`u_admin`) receives only `role:admin`, which appears in no document ACL, so admins see 0 documents.
+4. If a principal has no tokens, `SecureStore.search` returns `[]` immediately without querying Qdrant.
 
 ---
 
-## Security Principles Enforced
+## Leftover Cleanups (Part A)
 
-1. **Identity only in JWT**: Token payload carries identity (`sub`), timestamps (`iat`, `exp`), and unique ID (`jti`). Roles and clearance are **never** in the token.
-2. **Live DB authorization**: Roles and active status are reloaded from PostgreSQL on every request. Admin role revocations or deactivations take effect immediately.
-3. **Server-side query filtering**: Clients cannot pass or alter filter parameters.
-4. **Fail closed**: Chunks with missing or empty permission tokens are rejected before embedding. Unlisted documents cannot be ingested.
-5. **Single Gateway**: `app/index/store.py` (`SecureStore`) is the only module allowed to import `qdrant_client`.
+- **A1. Clearance Field Removal**: Completely removed legacy `clearance` column from `User` model, schemas (`CreateUserRequest`, `UserOut`, `UpdateRolesRequest`), and admin endpoints. Migration ran `ALTER TABLE users DROP COLUMN IF EXISTS clearance;`.
+- **A2. Self-Registration Gate**: Added `ALLOW_SELF_REGISTER` setting (default: `false`). When `false`, `POST /auth/register` returns `403 Forbidden` with `"Registration is disabled"`. When `true`, registered users get empty roles and `employee_id = None`, giving them zero document access.
+- **A3. Live User Deactivation**: Inactive users cannot log in. An active JWT token for a user who was subsequently deactivated in the database is rejected with `401 Unauthorized` on their very next request.
+
+---
+
+## Settings & Environment Variables (.env)
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://...` | PostgreSQL connection string |
+| `QDRANT_URL` | `http://localhost:6333` | Qdrant vector database URL |
+| `QDRANT_COLLECTION` | `vaultrag_chunks` | Main vector collection name |
+| `JWT_SECRET` | `CHANGE_ME...` | Secret key for HS256 JWT tokens |
+| `ALLOW_SELF_REGISTER` | `false` | Enable/disable public user registration |
+| `RERANK_ENABLED` | `false` | Enable cross-encoder reranking by default |
+| `RERANK_CANDIDATES` | `20` | Max candidates retrieved for reranking |
+| `RERANK_MODEL` | `BAAI/bge-reranker-v2-m3` | Cross-encoder reranker model |
+| `SEARCH_RATE_LIMIT_PER_MINUTE` | `60` | In-memory search rate limit per user |
 
 ---
 
 ## Test Suites
 
-All 41 tests pass across the test suite:
-- `tests/test_auth.py` (21 tests): Northwind login, `/auth/me` and `/me` identity, role reloading, token validation, password bcrypt limits, CORS.
-- `tests/test_admin.py` (6 tests): Non-admin 403, admin user creation with valid roles, self-registration with empty roles, deactivation 401, audit logging.
-- `tests/test_health.py` (1 test): Postgres & Qdrant health check.
-- `tests/test_principals.py` (6 tests): User and document token generation, admin and empty user isolation, exact 100% matrix match across all 19 documents against reference `acl.py`.
-- `tests/test_dataset_ingestion.py` (7 tests): Fast fake-embedder ingestion of 7 PDFs, ground-truth evaluation coverage (>= 90% on `eval_questions.json`), poison file comment and `display:none` preservation, ingestion idempotency, payload indexes, and `bge-m3` embedding dimension check.
+All 55 tests pass across the test suite:
+- `tests/test_auth.py` (21 tests): Northwind login, `/auth/me` identity, role reload without new token, bcrypt bounds, self-registration toggle (403 when false).
+- `tests/test_admin.py` (6 tests): Non-admin 403, user creation with roles, deactivation 401, audit log persistence.
+- `tests/test_health.py` (2 tests): Postgres & Qdrant health check, API root.
+- `tests/test_principals.py` (6 tests): User and document token generation, admin isolation, 100% matrix match across all 19 documents against reference `acl.py`.
+- `tests/test_dataset_ingestion.py` (8 tests): Fake-embedder ingestion, ground-truth evaluation coverage, poison file preservation, ingestion idempotency, and `bge-m3` embedding dimension.
+- `tests/test_search.py` (12 tests): Fail-closed empty tokens, filter presence on prefetches + outer query, dynamic DB role update without re-login, 401 on missing/tampered/deactivated token, ACL separation (Asha vs Ravi/Karan on Apex; Asha vs Karan/Meera on memo & board; Admin 0 results), identical empty response, poison exclusion by default, and rate limiting (429).
