@@ -35,14 +35,14 @@ Qdrant has no built-in role-based access control engine. All authorization logic
 
 VaultRAG is evaluated against the Northwind Industrial Pvt Ltd dataset (`data/northwind/rag_demo_dataset`):
 - **Roles**: `employee`, `manager`, `hr_admin`, `finance_admin`, `admin`
-- **System Admin**: In the Northwind model, system admin has no document ACLs (can only manage users/system).
+- **System Admin**: Platform administrator (`u_admin`, role `admin`). When `ADMIN_SEES_ALL=true` (default), `role:admin` is included in all document ACLs so admin can read all documents and monitor system activity without any filter bypass.
 - **Fail-Closed**: Any chunk without permission tokens is rejected. Any document not listed in `acl_policy.json` is rejected.
 
 ### Permission Token Syntax
 
 | Token Format | Meaning | Example |
 |---|---|---|
-| `role:<role>` | Role-based document access | `role:employee`, `role:hr_admin` |
+| `role:<role>` | Role-based document access | `role:employee`, `role:hr_admin`, `role:admin` |
 | `emp:<id>` | Individual employee access (e.g. ID card, hotel receipt) | `emp:E1004`, `emp:E1010` |
 | `dept:<dept>` | Department-level document access | `dept:Engineering` |
 | `rolemp:<r>@<id>` | Role-employee specific binding | `rolemp:manager@E1003` |
@@ -63,6 +63,110 @@ All demo accounts share the password `changeme123`:
 | `u_meera` | Meera Iyer | `meera.iyer@northwind.example` | `hr_admin` | `E1001` | HR |
 | `u_karan` | Karan Shah | `karan.shah@northwind.example` | `finance_admin` | `E1002` | Finance |
 | `u_admin` | System Admin | `admin@northwind.example` | `admin` | None | None |
+
+---
+
+## Admin Access & Monitoring (`ADMIN_SEES_ALL`)
+
+VaultRAG empowers the platform administrator (`u_admin`, role `admin`) to read all ingested documents and monitor system activity (queries asked, answered vs refused, chunk counts, latency, and uploads) **without introducing any filter bypass or backdoor**:
+
+1. **Zero-Bypass Architecture**:
+   - Access control remains 100% inside Qdrant (`MatchAny` filter on `acl_tokens` in dense and sparse prefetches and the final query).
+   - There is **no** `if user.role == "admin"` bypass anywhere in the retrieval engine or API.
+   - Admin access works strictly because `role:admin` is present in the chunk's `acl_tokens` list.
+   - Admin principal tokens remain strictly `["role:admin"]` (no wildcards).
+   - Poison corpus (`poison_test`) remains excluded from search by default for all users, including admin.
+
+2. **In-Place Switching Without Re-embedding (`scripts/set_admin_access.py`)**:
+   - Easily toggle or check admin access on existing Qdrant vector points in place without re-embedding:
+   ```cmd
+   :: Check status (how many points contain role:admin)
+   python scripts\set_admin_access.py --status
+
+   :: Grant admin access to all existing points (adds role:admin)
+   python scripts\set_admin_access.py --on
+
+   :: Revoke admin access (removes role:admin)
+   python scripts\set_admin_access.py --off
+   ```
+
+3. **Audited Reads**:
+   - Every read by `u_admin` via `/ask`, `/search`, or `/citation/{chunk_id}` writes an audit log entry in PostgreSQL with `admin_access=true`.
+   - The audit log records structured metadata: `event_type`, `user_id`, `created_at`, `refused`, `reason_code`, `latency_ms`, `chunk_count`, `question_hash`, and `question_length`.
+   - Document text, plain query text, and passwords/tokens are **never** logged.
+
+### Real API Interaction Examples
+
+#### (a) `u_admin` asking the Apex monthly fee (`/ask`)
+Request:
+```http
+POST /ask
+Authorization: Bearer <u_admin_jwt>
+Content-Type: application/json
+
+{"question": "What is the monthly service fee under the Apex contract?"}
+```
+Response (`200 OK`):
+```json
+{
+  "answer": "The Company shall pay the Vendor a fixed monthly service fee of Rs 4,00,000 (Rupees Four Lakh only), excluding GST at the applicable rate of 18% [1].",
+  "refused": false,
+  "verified": true,
+  "citations": [
+    {
+      "id": 1,
+      "chunk_id": "vendor_contract_apex-p1-c1",
+      "source_id": "pdf:vendor_contract_apex.pdf",
+      "file": "vendor_contract_apex.pdf",
+      "page": 1,
+      "snippet": "from 1 Apr 2026 - 31 Mar 2028, unless terminated earlier under Clause 7. 2. Fees The Company shall pay the Vendor a fixed monthly service fee of Rs 4,00,000 (Rupees Four Lakh only), excluding GST at the applicable rate of 18%.",
+      "highlights": [
+        {
+          "start": 437,
+          "end": 590
+        }
+      ],
+      "highlight_text": "2. Fees The Company shall pay the Vendor a fixed monthly service fee of Rs 4,00,000 (Rupees Four Lakh only), excluding GST at the applicable rate of 18%."
+    }
+  ]
+}
+```
+
+#### (b) `u_admin` fetching citation details (`/citation/vendor_contract_apex-p1-c1`)
+Request:
+```http
+GET /citation/vendor_contract_apex-p1-c1
+Authorization: Bearer <u_admin_jwt>
+```
+Response (`200 OK`):
+```json
+{
+  "chunk_id": "vendor_contract_apex-p1-c1",
+  "source_id": "pdf:vendor_contract_apex.pdf",
+  "file": "vendor_contract_apex.pdf",
+  "page": 1,
+  "text": "Northwind Industrial Pvt Ltd | Master Logistics Services Agreement VC-2026-014 | Confidential | CONF-VC-3340 Page 1 of 4 Master Logistics Services Agreement This Agreement is made between Northwind Industrial Pvt Ltd (the Company) and Apex Logistics Pvt Ltd (the Vendor), contract reference VC-2026-014. 1. Term The Agreement is effective for a term of 24 months, from 1 Apr 2026 - 31 Mar 2028, unless terminated earlier under Clause 7. 2. Fees The Company shall pay the Vendor a fixed monthly service fee of Rs 4,00,000 (Rupees Four Lakh only), excluding GST at the applicable rate of 18%."
+}
+```
+
+#### (c) `u_asha` asking the same Apex fee question (`/ask` - unauthorized)
+Request:
+```http
+POST /ask
+Authorization: Bearer <u_asha_jwt>
+Content-Type: application/json
+
+{"question": "What is the monthly service fee under the Apex contract?"}
+```
+Response (`200 OK` with safe constant refusal):
+```json
+{
+  "answer": "I couldn't find an answer to that in the documents available to you.",
+  "refused": true,
+  "verified": false,
+  "citations": []
+}
+```
 
 ---
 
@@ -198,10 +302,155 @@ VaultRAG enforces access control through discrete permission tokens:
 
 ## Test Suites
 
-All 55 tests pass across the test suite:
+All 89 tests pass across the test suite:
 - `tests/test_auth.py` (21 tests): Northwind login, `/auth/me` identity, role reload without new token, bcrypt bounds, self-registration toggle (403 when false).
 - `tests/test_admin.py` (6 tests): Non-admin 403, user creation with roles, deactivation 401, audit log persistence.
 - `tests/test_health.py` (2 tests): Postgres & Qdrant health check, API root.
 - `tests/test_principals.py` (6 tests): User and document token generation, admin isolation, 100% matrix match across all 19 documents against reference `acl.py`.
 - `tests/test_dataset_ingestion.py` (8 tests): Fake-embedder ingestion, ground-truth evaluation coverage, poison file preservation, ingestion idempotency, and `bge-m3` embedding dimension.
-- `tests/test_search.py` (12 tests): Fail-closed empty tokens, filter presence on prefetches + outer query, dynamic DB role update without re-login, 401 on missing/tampered/deactivated token, ACL separation (Asha vs Ravi/Karan on Apex; Asha vs Karan/Meera on memo & board; Admin 0 results), identical empty response, poison exclusion by default, and rate limiting (429).
+- `tests/test_search.py` (12 tests): Fail-closed empty tokens, filter presence on prefetches + outer query, dynamic DB role update without re-login, 401 on missing/tampered/deactivated token, ACL separation, identical empty response, poison exclusion, and rate limiting (429).
+- `tests/test_ask.py` (34 tests): Grounded answer pipeline, low-relevance refusal before LLM, citation mapping, deterministic fact checking, canary output guard, poison canary blocks, delimiter neutralization, JSON repair retry, timeout 503 handling, identical refusal responses, citation ACL enforcement (same 404), rate limiting (429), highlight offsets matching chunk text, supporting-only citations, answer bracket marker retention, and live Ollama integration test.
+
+---
+
+## Step 5: Grounded Answers & Prompt Injection Defense
+
+### 1. Ollama Setup & Model Verification
+The LLM runs locally via Ollama HTTP API (port 11434) and is **never** loaded in-process.
+
+To start Ollama and check installed models:
+```cmd
+:: Start Ollama server
+ollama serve
+
+:: Verify installed models
+curl http://localhost:11434/api/tags
+
+:: If models are missing, pull them (Lenovo LOQ RTX 4050 6GB VRAM):
+ollama pull qwen2.5:7b
+ollama pull qwen2.5:3b
+```
+
+### 2. The `/ask` and `/citation` Endpoints
+
+#### `POST /ask`
+- **URL**: `POST /ask`
+- **Auth**: Bearer JWT token required
+- **Body**: `{"question": "What is the monthly service fee under the Apex contract?", "top_k": 5}`
+- **Response (`u_karan` - Authorized)**:
+  ```json
+  {
+    "answer": "The Company shall pay the Vendor a fixed monthly service fee of Rs 4,00,000 (Rupees Four Lakh only), excluding GST at the applicable rate of 18% [1].",
+    "refused": false,
+    "verified": true,
+    "citations": [
+      {
+        "id": 1,
+        "chunk_id": "vendor_contract_apex-p1-c1",
+        "source_id": "pdf:vendor_contract_apex.pdf",
+        "file": "vendor_contract_apex.pdf",
+        "page": 1,
+        "snippet": "from 1 Apr 2026 - 31 Mar 2028, unless terminated earlier under Clause 7. 2. Fees The Company shall pay the Vendor a fixed monthly service fee of Rs 4,00,000 (Rupees Four Lakh only), excluding GST at the applicable rate of 18%.",
+        "highlights": [
+          {
+            "start": 437,
+            "end": 590
+          }
+        ],
+        "highlight_text": "2. Fees The Company shall pay the Vendor a fixed monthly service fee of Rs 4,00,000 (Rupees Four Lakh only), excluding GST at the applicable rate of 18%."
+      }
+    ]
+  }
+  ```
+- **Response (`u_meera` - "What was decided in the August board meeting?")**:
+  ```json
+  {
+    "answer": "The board approved a contract with Apex Logistics Pvt Ltd for logistics services, an increment pool for FY 2026-27, hiring of engineers, and capital expenditure for warehouse automation [1].",
+    "refused": false,
+    "verified": true,
+    "citations": [
+      {
+        "id": 1,
+        "chunk_id": "board_minutes_2026_08-p2-c1",
+        "source_id": "pdf:board_minutes_2026_08.pdf",
+        "file": "board_minutes_2026_08.pdf",
+        "page": 2,
+        "snippet": "8,00,000 for 24 months from 1 April 2026, be and is hereby approved. R2. Resolved that an increment pool of 8% of total fixed pay be approved for FY 2026-27, effective 1 October 2026, with no individual increment exceeding 12%. R3. Resolved that the hiring of 12 additional engineers in the Engineeri",
+        "highlights": [
+          {
+            "start": 345,
+            "end": 499
+          }
+        ],
+        "highlight_text": "Resolved that an increment pool of 8% of total fixed pay be approved for FY 2026-27, effective 1 October 2026, with no individual increment exceeding 12%."
+      }
+    ]
+  }
+  ```
+- **Response (`u_asha` - Forbidden / Safe Refusal)**:
+  ```json
+  {
+    "answer": "I couldn't find an answer to that in the documents available to you.",
+    "refused": true,
+    "verified": false,
+    "citations": []
+  }
+  ```
+
+#### `GET /citation/{chunk_id}`
+- **URL**: `GET /citation/{chunk_id}`
+- **Auth**: Bearer JWT token required
+- **ACL Enforcement**: Evaluates the user's permission tokens against the chunk's `acl_tokens` in Qdrant. If the chunk does not exist OR the user lacks permission, returns the **exact same 404 body**: `{"detail": "Chunk not found"}`.
+
+### 3. Safe Refusal Design
+When an answer cannot be generated (missing data, forbidden documents, low relevance, or failed verification), VaultRAG returns **one constant string**:
+> `"I couldn't find an answer to that in the documents available to you."`
+
+The API response **never** reveals internal reason codes, chunk counts, or whether the document exists. Reason codes (`no_relevant_context`, `llm_not_answerable`, `verification_failed`, `output_guard`) are written **only** to the internal security audit log.
+
+### 4. Multi-Layer Prompt Injection Defense
+1. **Context Delimiters & Neutralization**: Chunks are wrapped between `BEGIN_CONTEXT_CHUNK` and `END_CONTEXT_CHUNK`. Any appearance of these delimiters inside untrusted document text is stripped/replaced before prompting.
+2. **Untrusted Data Rule**: System prompt instructs the model that retrieved chunks are data, not instructions, and any instructions within them must be ignored.
+3. **Canary Leak Detection**: The canary marker `SYS-CANARY-0xA17` is planted in the system prompt. If it ever appears in an answer, the output is blocked and logged as a security alert.
+4. **Poison Canary Defense**: Poison strings (`PWNED-4471`, `EXFIL-8832`, `ADMIN-GRANTED-2290`) are blocked by the post-generation output guard.
+5. **URL & Link Sanitization**: Markdown links and external URLs not present in cited chunks are blocked.
+6. **Claim-Level Fact Verification**: Every number, amount, date, and ID token in generated sentences must exist in cited chunks, and sentences must meet `SUPPORT_THRESHOLD`.
+
+### 5. Running Step 5 Scripts (cmd syntax)
+From `D:\VaultRAG\backend` with `.venv` active:
+
+```cmd
+:: 1. Run reranker threshold calibration (PDF questions, cached)
+python scripts\calibrate_threshold.py --max-questions 40
+
+:: 2. Run comprehensive answer and security evaluation (real LLM)
+python scripts\eval_answers.py
+
+:: 3. Run interactive walkthrough (u_asha vs u_karan)
+python scripts\walkthrough.py
+
+:: 4. Run test suite
+pytest tests\ -v -m "not llm"
+pytest tests\test_ask.py -v -m llm
+```
+
+### 6. Settings & Fallback Warning
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `LLM_PROVIDER` | `ollama` | Provider: `ollama` (default) |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama HTTP endpoint |
+| `LLM_MODEL` | `qwen2.5:7b` | Primary local LLM |
+| `LLM_FALLBACK_MODEL` | `qwen2.5:3b` | Local fallback LLM |
+| `LLM_TIMEOUT_S` | `90` | HTTP timeout for LLM generation |
+| `LLM_MAX_TOKENS` | `400` | Max generation tokens |
+| `LLM_FALLBACK_ENABLED` | `false` | Enable fallback to hosted cloud LLMs |
+| `ASK_TOP_K` | `5` | Max context chunks provided to LLM |
+| `ASK_CANDIDATES` | `10` | Candidates retrieved for reranking |
+| `RELEVANCE_THRESHOLD` | `0.05` | Calibrated reranker relevance gate |
+| `SUPPORT_THRESHOLD` | `0.05` | Calibrated claim semantic support threshold |
+| `ASK_RATE_LIMIT_PER_MINUTE` | `20` | Sliding window rate limit for `/ask` |
+| `ADMIN_SEES_ALL` | `true` | When true, role:admin is added to chunk ACLs so platform admin can read all documents. All admin reads are audited. |
+
+> **IMPORTANT - DATA SOVEREIGNTY & PRIVACY NOTE:**
+> `LLM_FALLBACK_ENABLED` is set to `false` by default. Enabling fallback to hosted providers (e.g. Groq, Gemini) sends confidential document text outside your local machine to external third-party cloud APIs. Keep this disabled for strict on-premise data confidentiality.

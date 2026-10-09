@@ -1,4 +1,7 @@
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-markers = ["slow: tests that load real ML models (deselect with -m 'not slow')"]
+markers = [
+    "slow: tests that load real ML models (deselect with -m 'not slow')",
+    "llm: tests that call real LLM via Ollama",
+]

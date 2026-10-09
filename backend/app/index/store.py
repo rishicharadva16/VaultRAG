@@ -33,9 +33,10 @@ class SearchResult:
     corpus: str
     text: str
     score: float
+    row_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        d = {
             "chunk_id": self.chunk_id,
             "source_id": self.source_id,
             "file": self.file,
@@ -44,13 +45,16 @@ class SearchResult:
             "text": self.text,
             "score": self.score,
         }
+        if self.row_id is not None:
+            d["row_id"] = self.row_id
+        return d
 
 
 class SecureStore:
     """Single gateway to Qdrant. All access control is enforced here."""
 
-    def __init__(self, url: str | None = None):
-        self._client = QdrantClient(url=url or settings.QDRANT_URL)
+    def __init__(self, url: str | None = None, timeout: float = 10.0):
+        self._client = QdrantClient(url=url or settings.QDRANT_URL, timeout=timeout)
 
     # ── Health ────────────────────────────────────────────────
 
@@ -370,12 +374,193 @@ class SecureStore:
                 SearchResult(
                     chunk_id=str(payload.get("chunk_id", "")),
                     source_id=str(payload.get("source_id", "")),
-                    file=str(payload.get("source_doc") or payload.get("source_name") or ""),
+                    file=str(payload.get("file") or payload.get("table") or payload.get("source_doc") or payload.get("source_name") or ""),
                     page=payload.get("page"),
                     corpus=str(payload.get("corpus", "main")),
                     text=str(payload.get("text", "")),
                     score=float(pt.score) if pt.score is not None else 0.0,
+                    row_id=payload.get("row_id") or payload.get("row_pk"),
                 )
             )
 
         return results
+
+    def get_chunk(
+        self,
+        principal: "Principal",
+        chunk_id: str,
+        collection: str | None = None,
+    ) -> "SearchResult | None":
+        """
+        Fetch a single chunk by chunk_id, ONLY if the principal may see it.
+        Uses the same ACL filter as search. Returns None if not found or forbidden.
+        """
+        if principal is None or not getattr(principal, "tokens", None):
+            return None
+
+        from app.index.schema import point_id as make_point_id
+
+        name = collection or settings.QDRANT_COLLECTION
+        pid = make_point_id(chunk_id)
+
+        # ACL filter: same logic as search
+        access_filter = models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="acl_tokens",
+                    match=models.MatchAny(any=list(principal.tokens)),
+                ),
+                models.FieldCondition(
+                    key="chunk_id",
+                    match=models.MatchValue(value=chunk_id),
+                ),
+            ],
+            must_not=[
+                models.FieldCondition(
+                    key="deleted",
+                    match=models.MatchValue(value=True),
+                ),
+                models.FieldCondition(
+                    key="corpus",
+                    match=models.MatchValue(value="poison_test"),
+                ),
+            ],
+        )
+
+        try:
+            points, _ = self._client.scroll(
+                collection_name=name,
+                scroll_filter=access_filter,
+                limit=1,
+                with_payload=True,
+                with_vectors=False,
+            )
+        except Exception:
+            return None
+
+        if not points:
+            return None
+
+        pt = points[0]
+        payload = pt.payload or {}
+        return SearchResult(
+            chunk_id=str(payload.get("chunk_id", "")),
+            source_id=str(payload.get("source_id", "")),
+            file=str(payload.get("file") or payload.get("table") or payload.get("source_doc") or payload.get("source_name") or ""),
+            page=payload.get("page"),
+            corpus=str(payload.get("corpus", "main")),
+            text=str(payload.get("text", "")),
+            score=0.0,
+            row_id=payload.get("row_id") or payload.get("row_pk"),
+        )
+
+    # ── Admin Access Switch (In-Place Payload Update) ──────────
+
+    def get_admin_access_status(self, collection: str | None = None) -> dict[str, int]:
+        """
+        Count how many points in the collection contain 'role:admin' in acl_tokens out of the total.
+        Returns: {"admin_points": admin_count, "total_points": total_count}
+        """
+        name = collection or settings.QDRANT_COLLECTION
+        total = 0
+        admin_count = 0
+        offset = None
+
+        while True:
+            points, next_offset = self._client.scroll(
+                collection_name=name,
+                limit=100,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            for pt in points:
+                total += 1
+                tokens = (pt.payload or {}).get("acl_tokens", [])
+                if "role:admin" in tokens:
+                    admin_count += 1
+
+            if next_offset is None:
+                break
+            offset = next_offset
+
+        return {"admin_points": admin_count, "total_points": total}
+
+    def set_admin_access(
+        self, enabled: bool, collection: str | None = None, batch_size: int = 100,
+    ) -> dict[str, int]:
+        """
+        Update acl_tokens in place on ALL existing points (adding or removing role:admin)
+        WITHOUT re-embedding. Idempotent.
+        Returns: {"scanned": scanned, "changed": changed, "already_correct": already_correct}
+        """
+        name = collection or settings.QDRANT_COLLECTION
+        scanned = 0
+        changed = 0
+        already_correct = 0
+        offset = None
+        operations: list[models.SetPayloadOperation] = []
+
+        while True:
+            points, next_offset = self._client.scroll(
+                collection_name=name,
+                limit=batch_size,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            for pt in points:
+                scanned += 1
+                payload = pt.payload or {}
+                tokens = list(payload.get("acl_tokens", []))
+                has_admin = "role:admin" in tokens
+
+                if enabled:
+                    if has_admin:
+                        already_correct += 1
+                    else:
+                        new_tokens = sorted(set(tokens) | {"role:admin"})
+                        operations.append(
+                            models.SetPayloadOperation(
+                                set_payload=models.SetPayload(
+                                    payload={"acl_tokens": new_tokens},
+                                    points=[pt.id],
+                                )
+                            )
+                        )
+                        changed += 1
+                else:
+                    if not has_admin:
+                        already_correct += 1
+                    else:
+                        new_tokens = sorted(set(tokens) - {"role:admin"})
+                        operations.append(
+                            models.SetPayloadOperation(
+                                set_payload=models.SetPayload(
+                                    payload={"acl_tokens": new_tokens},
+                                    points=[pt.id],
+                                )
+                            )
+                        )
+                        changed += 1
+
+            if next_offset is None:
+                break
+            offset = next_offset
+
+        # Execute payload updates in batches
+        if operations:
+            for i in range(0, len(operations), batch_size):
+                batch_ops = operations[i : i + batch_size]
+                self._client.batch_update_points(
+                    collection_name=name,
+                    update_operations=batch_ops,
+                    wait=True,
+                )
+
+        return {
+            "scanned": scanned,
+            "changed": changed,
+            "already_correct": already_correct,
+        }
+

@@ -3,6 +3,7 @@ Search API endpoint with permission token access control,
 audit logging, rate limiting, and optional cross-encoder reranking.
 """
 
+import hashlib
 import time
 from collections import defaultdict
 from typing import Any
@@ -51,6 +52,7 @@ class SearchResultItem(BaseModel):
     source_id: str
     file: str
     page: int | None = None
+    row_id: str | None = None
     text: str
     score: float
 
@@ -77,7 +79,11 @@ def search_documents(
     Enforces rate limits, builds security principal fresh from database user,
     logs audit entry, and applies optional reranking.
     """
+    t0 = time.time()
     user_id_str = str(current_user.id)
+    is_admin = ("admin" in (getattr(current_user, "roles", None) or [])) or (user_id_str == "u_admin")
+    q_hash = hashlib.sha256(request.query.encode("utf-8")).hexdigest()[:16]
+    q_len = len(request.query)
 
     # E4: Rate limiting
     if not check_rate_limit(user_id_str):
@@ -110,13 +116,23 @@ def search_documents(
     else:
         final_results = raw_results[: request.top_k]
 
-    # E3: Audit logging (never log document text)
+    elapsed = time.time() - t0
+    latency_ms = round(elapsed * 1000, 2)
+
+    # E3: Audit logging (never log document text or raw query text)
     write_audit(
         db,
         user_id=user_id_str,
         event="search",
+        event_type="search",
+        refused=len(final_results) == 0,
+        reason_code=None if final_results else "no_results",
+        latency_ms=latency_ms,
+        chunk_count=len(final_results),
+        admin_access=is_admin,
+        question_hash=q_hash,
+        question_length=q_len,
         details={
-            "query": request.query[:200],
             "chunk_ids": [r.chunk_id for r in final_results],
             "count": len(final_results),
             "rerank": should_rerank,
@@ -137,6 +153,7 @@ def search_documents(
             source_id=r.source_id,
             file=r.file,
             page=r.page,
+            row_id=getattr(r, "row_id", None),
             text=r.text,
             score=round(r.score, 6),
         )

@@ -19,7 +19,7 @@ Verifies:
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.orm import Session
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from app.config import settings
 from app.db.models import User
@@ -225,7 +225,7 @@ async def test_acl_separation_finance_memo_and_board_minutes(client: AsyncClient
 
 
 async def test_admin_gets_zero_results(client: AsyncClient):
-    """u_admin has role:admin which appears in no document ACL, so gets 0 results for any query."""
+    """When store returns no chunks for admin (e.g. ADMIN_SEES_ALL off), admin gets 0 results for any query."""
     res = await client.post("/auth/login", json={"email": "admin@northwind.example", "password": SEED_PASSWORD})
     assert res.status_code == 200
     t_admin = res.json()["access_token"]
@@ -236,11 +236,12 @@ async def test_admin_gets_zero_results(client: AsyncClient):
         "August board minutes resolutions",
         "IT security requirements",
     ]
-    for q in queries:
-        resp = await client.post("/search", headers=auth_header(t_admin), json={"query": q})
-        assert resp.status_code == 200
-        assert resp.json()["count"] == 0
-        assert resp.json()["results"] == []
+    with patch.object(SecureStore, "search", return_value=[]):
+        for q in queries:
+            resp = await client.post("/search", headers=auth_header(t_admin), json={"query": q})
+            assert resp.status_code == 200
+            assert resp.json()["count"] == 0
+            assert resp.json()["results"] == []
 
 
 # ---------------------------------------------------------------------------
@@ -252,11 +253,12 @@ async def test_identical_empty_response_forbidden_vs_nonexistent(client: AsyncCl
     res = await client.post("/auth/login", json={"email": "admin@northwind.example", "password": SEED_PASSWORD})
     token = res.json()["access_token"]
 
-    # Forbidden: Admin querying Apex vendor contract
-    res_forbidden = await client.post("/search", headers=auth_header(token), json={"query": "Apex vendor contract value"})
+    with patch.object(SecureStore, "search", return_value=[]):
+        # Forbidden: querying forbidden topic with empty accessible results
+        res_forbidden = await client.post("/search", headers=auth_header(token), json={"query": "Apex vendor contract value"})
 
-    # Nonexistent: Admin querying non-existent topic
-    res_nonexistent = await client.post("/search", headers=auth_header(token), json={"query": "quantum gravity propulsion system specifications"})
+        # Nonexistent: querying non-existent topic
+        res_nonexistent = await client.post("/search", headers=auth_header(token), json={"query": "quantum gravity propulsion system specifications"})
 
     assert res_forbidden.status_code == 200
     assert res_nonexistent.status_code == 200
@@ -271,6 +273,7 @@ async def test_identical_empty_response_forbidden_vs_nonexistent(client: AsyncCl
     }
     assert body_forbidden == expected
     assert body_nonexistent == expected
+    assert body_forbidden == body_nonexistent
 
 
 # ---------------------------------------------------------------------------

@@ -3,7 +3,7 @@ ACL tagger: attaches resolved permissions to raw chunks and validates with Chunk
 """
 
 from app.index.schema import Chunk
-from app.security.principals import doc_tokens
+from app.security.principals import doc_tokens, finalize_acl_tokens
 
 
 def tag_chunks(
@@ -22,9 +22,10 @@ def tag_chunks(
     """
     validated_chunks: list[Chunk] = []
 
-    tokens = sorted(doc_tokens(acl_info))
-    if not tokens:
+    base_tokens = doc_tokens(acl_info)
+    if not base_tokens:
         raise ValueError(f"Empty permission tokens for {source_id} (fail-closed access control)")
+    tokens = finalize_acl_tokens(base_tokens)
 
     for raw in raw_chunks:
         chunk = Chunk(

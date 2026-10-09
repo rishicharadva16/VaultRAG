@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, field_validator, model_validator
 
-from app.security.principals import doc_tokens
+from app.security.principals import doc_tokens, finalize_acl_tokens
 from app.security.roles import ROLES
 
 # Fixed namespace for deterministic point ids
@@ -30,6 +30,9 @@ class Chunk(BaseModel):
     bbox: list[float] | None = None
     table: str | None = None
     row_pk: str | None = None
+    file: str | None = None
+    row_id: str | None = None
+    kind: str | None = None
     chunk_type: Literal["text", "table"] = "text"
     text: str
     allowed_roles: list[str] = []
@@ -71,7 +74,11 @@ class Chunk(BaseModel):
                 "allowed_employees": self.allowed_employees,
                 "allowed_departments": self.allowed_departments,
             })
-            self.acl_tokens = sorted(computed)
+            if not computed:
+                raise ValueError("acl_tokens cannot be empty (fail-closed access control)")
+            self.acl_tokens = finalize_acl_tokens(computed)
+        else:
+            self.acl_tokens = finalize_acl_tokens(self.acl_tokens)
 
         if not self.acl_tokens:
             raise ValueError("acl_tokens cannot be empty (fail-closed access control)")

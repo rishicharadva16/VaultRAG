@@ -42,6 +42,31 @@ class Settings(BaseSettings):
     RERANK_MODEL: str = "BAAI/bge-reranker-v2-m3"
     SEARCH_RATE_LIMIT_PER_MINUTE: int = 60
 
+    # LLM & Generation (Step 5)
+    LLM_PROVIDER: str = "ollama"
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    LLM_MODEL: str = "qwen2.5:7b"
+    LLM_FALLBACK_MODEL: str = "qwen2.5:3b"
+    LLM_FALLBACK_ENABLED: bool = False
+    LLM_TIMEOUT_S: int = 90
+    LLM_MAX_TOKENS: int = 512
+    LLM_TEMPERATURE: float = 0.0
+
+    # Ask, Citations & Thresholds (Step 5)
+    ASK_TOP_K: int = 5
+    ASK_CANDIDATES: int = 10
+    ASK_USE_RERANK: bool = True
+    ASK_MIN_CONFIDENCE: float = 0.40
+    RELEVANCE_THRESHOLD: float = 0.05
+    SUPPORT_THRESHOLD: float = 0.05
+    VERIFY_WITH_LLM: bool = False
+    ASK_RATE_LIMIT_PER_MINUTE: int = 20
+
+
+    # Admin Access
+    # When true, role:admin is added to the ACL of every chunk so the platform admin can read all documents. All admin reads are audited.
+    ADMIN_SEES_ALL: bool = True
+
     # Dataset path (relative to repo root)
     DATASET_DIR: str = "data/northwind/rag_demo_dataset"
 

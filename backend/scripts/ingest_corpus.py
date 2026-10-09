@@ -22,6 +22,7 @@ from app.ingestion.pipeline import ingest_corpus
 def main():
     parser = argparse.ArgumentParser(description="Ingest Northwind corpus into Qdrant")
     parser.add_argument("--include-poison", action="store_true", help="Include poisoned test files")
+    parser.add_argument("--include-db", action="store_true", help="Include database table row ingestion")
     parser.add_argument("--only", default=None, help="Ingest only a specific file (e.g. hr_policy.pdf)")
     parser.add_argument("--collection", default=None, help="Target Qdrant collection")
     parser.add_argument("--corpus-dir", default=None, help="Custom corpus directory path")
@@ -33,21 +34,35 @@ def main():
     print(f"Ensuring Qdrant collection {coll} (dense=1024, sparse=BM25)...")
     store.ensure_collection(dense_size=1024, collection=coll)
 
-    print(f"Starting corpus ingestion (include_poison={args.include_poison}, only={args.only})...")
-    results = ingest_corpus(
-        root=args.corpus_dir,
-        store=store,
-        collection=coll,
-        include_poison=args.include_poison,
-        only=args.only,
-    )
-
-    print(f"\nIngested {len(results)} document(s):")
     total_chunks = 0
-    for r in results:
-        total_chunks += r["total_chunks"]
-        print(f"  • {r['file_name']:<42} [{r['corpus']}] chunks: {r['total_chunks']} (text: {r['text_chunks']}, table: {r['table_chunks']})")
-        print(f"    ACL tokens: {', '.join(r['acl_tokens'])}")
+    if not args.only or not args.only.startswith("db:"):
+        print(f"Starting corpus ingestion (include_poison={args.include_poison}, only={args.only})...")
+        results = ingest_corpus(
+            root=args.corpus_dir,
+            store=store,
+            collection=coll,
+            include_poison=args.include_poison,
+            only=args.only,
+        )
+
+        print(f"\nIngested {len(results)} document(s):")
+        for r in results:
+            total_chunks += r["total_chunks"]
+            print(f"  • {r['file_name']:<42} [{r['corpus']}] chunks: {r['total_chunks']} (text: {r['text_chunks']}, table: {r['table_chunks']})")
+            print(f"    ACL tokens: {', '.join(r['acl_tokens'])}")
+
+    if args.include_db:
+        from app.ingestion.db_ingestion import ingest_database
+
+        print(f"\nStarting database row ingestion into {coll}...")
+        db_results = ingest_database(store=store, collection=coll)
+        print(f"\nIngested {len(db_results)} database table(s):")
+        for dr in db_results:
+            total_chunks += dr["total_chunks"]
+            print(
+                f"  • {dr['table']:<15} rows: {dr['rows']}, chunks: {dr['total_chunks']} "
+                f"(base: {dr['base_chunks']}, sensitive: {dr['sensitive_chunks']})"
+            )
 
     qdrant_total = store.count(collection=coll)
     print(f"\nTotal chunks ingested this run: {total_chunks}")

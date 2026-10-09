@@ -9,7 +9,11 @@ Runs ONLY on results that have already passed access filtering.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
+
+# CRITICAL: Disable tokenizer thread parallelism to prevent Rayon/OpenMP deadlocks on Windows
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 from app.config import settings
 
@@ -43,6 +47,20 @@ class Reranker:
                     settings.RERANK_MODEL,
                     exc,
                 )
+
+    def score_pairs(self, pairs: list[list[str]]) -> list[float]:
+        """Score (query, text) pairs directly with CrossEncoder."""
+        if not pairs:
+            return []
+        self._load()
+        if self._model is None:
+            return [1.0] * len(pairs)
+        try:
+            scores = self._model.predict(pairs)
+            return [float(s) for s in scores]
+        except Exception as exc:
+            logger.warning("Reranker score_pairs failed: %s", exc)
+            return [1.0] * len(pairs)
 
     def rerank(self, query: str, results: list[Any], top_k: int) -> list[Any]:
         """

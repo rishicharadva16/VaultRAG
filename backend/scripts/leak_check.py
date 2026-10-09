@@ -90,6 +90,18 @@ def main():
     db_users = {u.external_id: u for u in db.query(User).all() if u.external_id}
     principals = {uid: build_principal(db_users[uid]) for uid in USER_ORDER if uid in db_users}
 
+    # Pre-fetch database allowed rows for all dataset users
+    from app.ingestion.db_ingestion import get_default_db_path
+    db_path = get_default_db_path()
+    db_ref_rows: dict[str, dict[str, dict]] = {}
+    for uid in USER_ORDER:
+        if uid in dataset_acl.ROLE_OF:
+            db_ref_rows[uid] = {}
+            for tbl in ["employees", "salaries", "expenses", "approvals"]:
+                rows = dataset_acl.allowed_rows(db_path, uid, tbl)
+                pk_col = "employee_id" if tbl in ("employees", "salaries") else ("expense_id" if tbl == "expenses" else "approval_id")
+                db_ref_rows[uid][tbl] = {r[pk_col]: dict(r) for r in rows}
+
     # Collect all queries to run
     # Format: list of dict(query=..., q_id=..., authorized_user=..., expected_sources=..., is_eval=...)
     test_queries = []
@@ -167,7 +179,21 @@ def main():
             # Check ACL for every returned chunk
             for r in results:
                 has_access = False
-                if uid != "u_admin" and dataset_acl.can_read_source(uid, r.source_id):
+                if uid == "u_admin":
+                    if r.corpus != "poison_test" and not r.source_id.startswith("poison:"):
+                        has_access = True
+                elif r.source_id.startswith("db:"):
+                    tbl = r.file or r.source_id.split("db:")[-1]
+                    ref_map = db_ref_rows.get(uid, {}).get(tbl, {})
+                    row_id = getattr(r, "row_id", None) or (r.chunk_id.split("#")[1].split(":")[0] if "#" in r.chunk_id else "")
+                    if row_id in ref_map:
+                        has_access = True
+                        if r.chunk_id.endswith(":sensitive"):
+                            if tbl == "employees" and "date_of_birth" not in ref_map[row_id]:
+                                has_access = False
+                            elif tbl == "salaries" and "bank_account_last4" not in ref_map[row_id]:
+                                has_access = False
+                elif dataset_acl.can_read_source(uid, r.source_id):
                     has_access = True
 
                 if not has_access:
@@ -189,19 +215,37 @@ def main():
                 and tq["authorized_user"] == uid
                 and tq["expected_sources"]
             ):
-                # Filter to expected sources in current corpus (PDFs)
-                expected_parsed = [parse_expected_source(es) for es in tq["expected_sources"]]
-                pdf_expected = [ep for ep in expected_parsed if ep[0].startswith("pdf:")]
+                # Filter to expected sources in current corpus (PDFs + DB rows)
+                active_expected = []
+                for es in tq["expected_sources"]:
+                    if es.startswith("pdf:"):
+                        active_expected.append(("pdf", parse_expected_source(es)))
+                    elif es.startswith("db:"):
+                        parts = es.split(":")
+                        if len(parts) >= 3:
+                            active_expected.append(("db", (f"db:{parts[1]}", parts[2])))
 
-                if pdf_expected:
+                def _matches_chunk(res_item, exp_tuple):
+                    kind, val = exp_tuple
+                    if kind == "pdf":
+                        exp_src, exp_page = val
+                        return res_item.source_id == exp_src and (exp_page is None or res_item.page == exp_page)
+                    elif kind == "db":
+                        exp_src, exp_pk = val
+                        if res_item.source_id == exp_src:
+                            row_pk = getattr(res_item, "row_id", None) or (res_item.chunk_id.split("#")[1].split(":")[0] if "#" in res_item.chunk_id else "")
+                            return row_pk == exp_pk
+                    return False
+
+                if active_expected:
                     user_stats[uid]["eval_count"] += 1
 
                     # Check hit@1
                     h1 = False
                     if results:
                         top1 = results[0]
-                        for exp_src, exp_page in pdf_expected:
-                            if top1.source_id == exp_src and (exp_page is None or top1.page == exp_page):
+                        for exp_item in active_expected:
+                            if _matches_chunk(top1, exp_item):
                                 h1 = True
                                 break
                     if h1:
@@ -210,8 +254,8 @@ def main():
                     # Check hit@3
                     h3 = False
                     for r in results[:3]:
-                        for exp_src, exp_page in pdf_expected:
-                            if r.source_id == exp_src and (exp_page is None or r.page == exp_page):
+                        for exp_item in active_expected:
+                            if _matches_chunk(r, exp_item):
                                 h3 = True
                                 break
                     if h3:
@@ -220,8 +264,8 @@ def main():
                     # Check hit@5
                     h5 = False
                     for r in results[:5]:
-                        for exp_src, exp_page in pdf_expected:
-                            if r.source_id == exp_src and (exp_page is None or r.page == exp_page):
+                        for exp_item in active_expected:
+                            if _matches_chunk(r, exp_item):
                                 h5 = True
                                 break
                     if h5:

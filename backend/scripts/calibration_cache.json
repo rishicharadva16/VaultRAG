@@ -1,0 +1,498 @@
+{
+  "questions": {
+    "Q001": {
+      "user_scores": {
+        "u_asha": {
+          "answerable": true,
+          "top_score": 0.9727664589881897
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.4567197263240814,
+        0.11640986800193787
+      ]
+    },
+    "Q002": {
+      "user_scores": {
+        "u_asha": {
+          "answerable": true,
+          "top_score": 0.6689626574516296
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.00662122992798686,
+        0.004597514867782593,
+        0.005403065122663975
+      ]
+    },
+    "Q003": {
+      "user_scores": {
+        "u_neha": {
+          "answerable": true,
+          "top_score": 0.4794730246067047
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.02985377237200737
+      ]
+    },
+    "Q004": {
+      "user_scores": {
+        "u_neha": {
+          "answerable": true,
+          "top_score": 0.08199900388717651
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.4711465537548065,
+        0.11179563403129578
+      ]
+    },
+    "Q005": {
+      "user_scores": {
+        "u_ravi": {
+          "answerable": true,
+          "top_score": 0.9939675331115723
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.4461493492126465,
+        0.17355768382549286
+      ]
+    },
+    "Q006": {
+      "user_scores": {
+        "u_asha": {
+          "answerable": true,
+          "top_score": 0.9814394116401672
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.3246031403541565
+      ]
+    },
+    "Q007": {
+      "user_scores": {
+        "u_asha": {
+          "answerable": true,
+          "top_score": 0.8863193988800049
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.12464514374732971,
+        0.6055317521095276
+      ]
+    },
+    "Q008": {
+      "user_scores": {
+        "u_ravi": {
+          "answerable": true,
+          "top_score": 0.9074105024337769
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.6578829884529114,
+        0.06754236668348312
+      ]
+    },
+    "Q009": {
+      "user_scores": {
+        "u_neha": {
+          "answerable": true,
+          "top_score": 0.9931246638298035
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.18385177850723267
+      ]
+    },
+    "Q010": {
+      "user_scores": {
+        "u_asha": {
+          "answerable": true,
+          "top_score": 0.9432541131973267
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.57029128074646
+      ]
+    },
+    "Q011": {
+      "user_scores": {
+        "u_asha": {
+          "answerable": true,
+          "top_score": 0.9869062304496765
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.23260626196861267,
+        0.7528960108757019
+      ]
+    },
+    "Q012": {
+      "user_scores": {
+        "u_ravi": {
+          "answerable": true,
+          "top_score": 0.43589311838150024
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.2735287547111511
+      ]
+    },
+    "Q013": {
+      "user_scores": {
+        "u_ravi": {
+          "answerable": true,
+          "top_score": 0.9945738911628723
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.166538268327713,
+        0.031080197542905807
+      ]
+    },
+    "Q014": {
+      "user_scores": {
+        "u_neha": {
+          "answerable": true,
+          "top_score": 0.9947209358215332
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.006392607931047678,
+        0.01329477597028017
+      ]
+    },
+    "Q015": {
+      "user_scores": {
+        "u_asha": {
+          "answerable": true,
+          "top_score": 0.981465220451355
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.13073885440826416
+      ]
+    },
+    "Q016": {
+      "user_scores": {
+        "u_dev": {
+          "answerable": true,
+          "top_score": 0.9914831519126892
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.07066565006971359
+      ]
+    },
+    "Q017": {
+      "user_scores": {
+        "u_asha": {
+          "answerable": true,
+          "top_score": 0.6107409596443176
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.17192083597183228
+      ]
+    },
+    "Q018": {
+      "user_scores": {
+        "u_neha": {
+          "answerable": true,
+          "top_score": 0.3478146195411682
+        },
+        "u_admin": {
+          "answerable": false,
+          "top_score": -99.0
+        }
+      },
+      "support_scores": [
+        0.2659277617931366
+      ]
+    },
+    "Q019": {
+      "user_scores": {
+        "u_karan": {
+          "answerable": true,
+          "top_score": 0.9962888956069946
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.011161361820995808
+        }
+      },
+      "support_scores": [
+        0.7114800214767456
+      ]
+    },
+    "Q020": {
+      "user_scores": {
+        "u_meera": {
+          "answerable": true,
+          "top_score": 0.9969045519828796
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.009118732996284962
+        }
+      },
+      "support_scores": [
+        0.31711944937705994
+      ]
+    },
+    "Q021": {
+      "user_scores": {
+        "u_meera": {
+          "answerable": true,
+          "top_score": 0.9546334147453308
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.0038089316803961992
+        }
+      },
+      "support_scores": [
+        0.017099233344197273
+      ]
+    },
+    "Q022": {
+      "user_scores": {
+        "u_karan": {
+          "answerable": true,
+          "top_score": 0.9936254024505615
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.0022838765289634466
+        }
+      },
+      "support_scores": [
+        0.867767333984375
+      ]
+    },
+    "Q023": {
+      "user_scores": {
+        "u_karan": {
+          "answerable": true,
+          "top_score": 0.903893768787384
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.000631410744972527
+        }
+      },
+      "support_scores": [
+        0.6484152674674988
+      ]
+    },
+    "Q024": {
+      "user_scores": {
+        "u_ravi": {
+          "answerable": true,
+          "top_score": 0.15198108553886414
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.0004177129885647446
+        }
+      },
+      "support_scores": [
+        0.2882246673107147
+      ]
+    },
+    "Q025": {
+      "user_scores": {
+        "u_karan": {
+          "answerable": true,
+          "top_score": 0.6456354260444641
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.007503553759306669
+        }
+      },
+      "support_scores": [
+        0.11677424609661102
+      ]
+    },
+    "Q026": {
+      "user_scores": {
+        "u_ravi": {
+          "answerable": true,
+          "top_score": 0.4348253905773163
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.00018175433797296137
+        }
+      },
+      "support_scores": [
+        0.6273407936096191,
+        0.33362728357315063
+      ]
+    },
+    "Q027": {
+      "user_scores": {
+        "u_karan": {
+          "answerable": true,
+          "top_score": 0.9440473318099976
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.006874359678477049
+        }
+      },
+      "support_scores": [
+        0.07771774381399155,
+        0.1735573709011078,
+        0.44614940881729126
+      ]
+    },
+    "Q028": {
+      "user_scores": {
+        "u_karan": {
+          "answerable": true,
+          "top_score": 0.9586753845214844
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.00010724683670559898
+        }
+      },
+      "support_scores": [
+        0.6361299753189087,
+        0.1925213634967804
+      ]
+    },
+    "Q029": {
+      "user_scores": {
+        "u_karan": {
+          "answerable": true,
+          "top_score": 0.979584276676178
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.00027380677056498826
+        }
+      },
+      "support_scores": [
+        0.1515238732099533,
+        0.1879063993692398
+      ]
+    },
+    "Q030": {
+      "user_scores": {
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.0012444164603948593
+        }
+      },
+      "support_scores": []
+    },
+    "Q031": {
+      "user_scores": {
+        "u_neha": {
+          "answerable": false,
+          "top_score": 0.3190693259239197
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.3190693259239197
+        }
+      },
+      "support_scores": []
+    },
+    "Q032": {
+      "user_scores": {
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.03549942374229431
+        }
+      },
+      "support_scores": []
+    },
+    "Q033": {
+      "user_scores": {
+        "u_ravi": {
+          "answerable": false,
+          "top_score": 0.00048355350736528635
+        },
+        "u_asha": {
+          "answerable": false,
+          "top_score": 0.00048355350736528635
+        }
+      },
+      "support_scores": []
+    }
+  }
+}

@@ -107,3 +107,25 @@ def doc_tokens(acl: dict) -> set[str]:
             tokens.add(f"usr:{u}")
 
     return tokens
+
+
+def finalize_acl_tokens(
+    tokens: list[str] | set[str],
+    admin_sees_all: bool | None = None,
+) -> list[str]:
+    """
+    Finalize chunk permission tokens for ingestion and storage:
+      - Deduplicate tokens
+      - Append 'role:admin' if ADMIN_SEES_ALL is True
+      - Return a sorted, unique list of token strings
+    Used by all ingestion paths (PDF, DB rows, image chunks).
+    """
+    if admin_sees_all is None:
+        from app.config import settings
+        admin_sees_all = getattr(settings, "ADMIN_SEES_ALL", True)
+
+    token_set = set(tokens)
+    if admin_sees_all:
+        token_set.add("role:admin")
+
+    return sorted(token_set)

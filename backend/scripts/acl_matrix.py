@@ -19,7 +19,7 @@ sys.path.insert(0, str(backend_dir))
 
 from app.config import settings
 from app.ingestion.acl_policy import load_acl_policy
-from app.security.principals import doc_tokens, user_tokens
+from app.security.principals import build_principal, doc_tokens, finalize_acl_tokens, user_tokens
 
 # Load reference acl.py dynamically without writing bytecode
 dataset_dir = settings.dataset_path()
@@ -62,14 +62,18 @@ def main():
 
     mismatches = 0
     total_checks = 0
+    admin_exceptions = 0
 
     for doc_id in doc_ids:
         acl = policy[doc_id]
-        d_tokens = doc_tokens(acl)
+        base_tokens = doc_tokens(acl)
+        d_tokens = set(finalize_acl_tokens(base_tokens))
 
         row_symbols = []
         for u in USERS:
-            u_tokens = user_tokens(u)
+            # Build principal tokens
+            p = build_principal(u)
+            u_tokens = set(p.tokens)
             vaultrag_can_read = bool(u_tokens & d_tokens)
 
             # Compare against reference acl.py for dataset users
@@ -82,25 +86,106 @@ def main():
                 else:
                     symbol = " YES " if vaultrag_can_read else "  .  "
             else:
-                # System admin
+                # System admin (u_admin): single intended exception to dataset acl.py
                 total_checks += 1
                 if vaultrag_can_read:
+                    admin_exceptions += 1
+                    symbol = " YES "
+                else:
                     mismatches += 1
                     symbol = "ERR"
-                else:
-                    symbol = "  .  "  # Admin has 0 document access
 
             row_symbols.append(symbol)
 
         print(f"{doc_id:<48} | " + " | ".join(f"{s:^7}" for s in row_symbols))
 
-    print("-" * len(header))
-    print(f"Total evaluated cell checks: {total_checks}")
-    print(f"Total mismatches with reference acl.py: {mismatches}")
-    if mismatches == 0:
-        print("[SUCCESS] 100% MATCH: VaultRAG permission tokens perfectly replicate dataset ACL rules!")
+    # ─────────────────────────────────────────────────────────────
+    # PART 2: Database Table Row & Column Level Matrix
+    # ─────────────────────────────────────────────────────────────
+    from app.ingestion.db_ingestion import get_default_db_path, load_db_chunks
+
+    db_path = get_default_db_path()
+    db_chunks = load_db_chunks(db_path)
+
+    print("\n" + "=" * 95)
+    print("VaultRAG vs Reference Database ACL Matrix (4 Tables, 180 Chunks × 7 Accounts)")
+    print("=" * 95)
+
+    db_mismatches = 0
+    db_total_checks = 0
+    db_admin_exceptions = 0
+
+    # Pre-fetch allowed rows per table for all dataset users
+    ref_rows_cache = {}
+    for u in USERS:
+        uid = u["user_id"]
+        if uid in dataset_acl.ROLE_OF:
+            ref_rows_cache[uid] = {}
+            for tbl in ["employees", "salaries", "expenses", "approvals"]:
+                rows = dataset_acl.allowed_rows(db_path, uid, tbl)
+                pk_col = "employee_id" if tbl in ("employees", "salaries") else ("expense_id" if tbl == "expenses" else "approval_id")
+                ref_rows_cache[uid][tbl] = {r[pk_col]: dict(r) for r in rows}
+
+    # Summary counts: table -> user -> count of accessible chunks
+    tbl_user_counts = {tbl: {u["user_id"]: 0 for u in USERS} for tbl in ["employees", "salaries", "expenses", "approvals"]}
+
+    for c in db_chunks:
+        tbl = str(c.table)
+        pk = str(c.row_pk)
+        is_sensitive = c.chunk_id.endswith(":sensitive")
+
+        for u in USERS:
+            uid = u["user_id"]
+            db_total_checks += 1
+            p = build_principal(u)
+            u_tokens = set(p.tokens)
+            vaultrag_can_read = bool(u_tokens & set(c.acl_tokens))
+
+            if vaultrag_can_read:
+                tbl_user_counts[tbl][uid] += 1
+
+            if uid in dataset_acl.ROLE_OF:
+                ref_map = ref_rows_cache[uid].get(tbl, {})
+                ref_can_read = pk in ref_map
+                if ref_can_read and is_sensitive:
+                    if tbl == "employees":
+                        ref_can_read = "date_of_birth" in ref_map[pk]
+                    elif tbl == "salaries":
+                        ref_can_read = "bank_account_last4" in ref_map[pk]
+
+                if vaultrag_can_read != ref_can_read:
+                    db_mismatches += 1
+                    print(f"  [MISMATCH] user={uid} chunk={c.chunk_id} (vaultrag={vaultrag_can_read}, ref={ref_can_read})")
+            else:
+                # u_admin exception
+                if vaultrag_can_read:
+                    db_admin_exceptions += 1
+                else:
+                    db_mismatches += 1
+
+    # Print summary table
+    db_header = f"{'Table (Total Chunks)':<25} | " + " | ".join(f"{uid:^7}" for uid in user_labels)
+    print(db_header)
+    print("-" * len(db_header))
+    for tbl in ["employees", "salaries", "expenses", "approvals"]:
+        tbl_total = sum(1 for c in db_chunks if c.table == tbl)
+        counts = [f"{tbl_user_counts[tbl][uid]}/{tbl_total}" for uid in user_labels]
+        print(f"{tbl + f' ({tbl_total})':<25} | " + " | ".join(f"{cnt:^7}" for cnt in counts))
+
+    print("-" * len(db_header))
+    print(f"Total database checks: {db_total_checks}")
+    print(f"Database mismatches on dataset user rules: {db_mismatches}")
+    print(
+        f"[INTENDED EXCEPTION] Platform admin (u_admin) can read all 180 database chunks "
+        f"({db_admin_exceptions} allowed via ADMIN_SEES_ALL role:admin chunk ACL token; "
+        f"dataset acl.py reference grants admin no database access)."
+    )
+
+    all_mismatches = mismatches + db_mismatches
+    if all_mismatches == 0:
+        print("\n[SUCCESS] 100% MATCH: Documents + Database records perfectly replicate dataset ACL rules (with intended admin exceptions)!")
     else:
-        print(f"[FAIL] Found {mismatches} mismatches!")
+        print(f"\n[FAIL] Found {all_mismatches} total mismatches!")
         sys.exit(1)
 
 

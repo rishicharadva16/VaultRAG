@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import admin, auth, health, search
+from app.api import admin, ask, auth, health, search
 from app.config import settings
 
 
@@ -44,6 +44,7 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(search.router)
+app.include_router(ask.router)
 
 # A1: /me as a top-level alias of /auth/me (same handler, same response)
 app.get("/me", response_model=auth.MeResponse, tags=["auth"])(auth.me)

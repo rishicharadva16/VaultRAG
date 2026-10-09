@@ -18,10 +18,11 @@ from app.index.schema import Chunk
 from app.index.store import SecureStore
 from app.ingestion.acl_policy import get_document_acl, load_acl_policy, resolve_source_id
 from app.ingestion.chunker import chunk_document, make_token_counter
+from app.ingestion.db_ingestion import ingest_database, load_db_chunks
 from app.ingestion.html_loader import load_html
 from app.ingestion.md_loader import load_md
 from app.ingestion.pdf_loader import load_pdf
-from app.security.principals import doc_tokens
+from app.security.principals import doc_tokens, finalize_acl_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +74,10 @@ def ingest_document(
     if acl_info is None:
         raise ValueError(f"No ACL defined for {source_id} in acl_policy.json (fail-closed)")
 
-    tokens = sorted(doc_tokens(acl_info))
-    if not tokens:
+    base_tokens = doc_tokens(acl_info)
+    if not base_tokens:
         raise ValueError(f"Empty permission tokens for {source_id} (fail-closed)")
+    tokens = finalize_acl_tokens(base_tokens)
 
     # 1. Load document content
     if ext == ".pdf":
