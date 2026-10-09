@@ -25,11 +25,7 @@ class Settings(BaseSettings):
     OLLAMA_URL: str = "http://localhost:11434"
 
     # CORS – comma-separated origins, no wildcards, no "null"
-    CORS_ORIGINS: str = (
-        "http://localhost:3000,http://127.0.0.1:3000,"
-        "http://localhost:5173,http://127.0.0.1:5173,"
-        "http://localhost:8080,http://127.0.0.1:8080"
-    )
+    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     # Embeddings (Step 2)
     EMBED_MODEL: str = "BAAI/bge-m3"
