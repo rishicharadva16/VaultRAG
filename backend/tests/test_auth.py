@@ -46,7 +46,12 @@ async def test_me_returns_correct_role_for_all_users(client):
         token = resp.json()["access_token"]
         me = await client.get("/auth/me", headers=auth_header(token))
         assert me.status_code == 200
-        assert me.json()["roles"] == u["roles"]
+        expected_roles = (
+            (["admin"] if "admin" in u["roles"] else ["employee"])
+            if settings.ACCESS_MODEL == "department"
+            else u["roles"]
+        )
+        assert me.json()["roles"] == expected_roles
 
 
 @pytest.mark.asyncio

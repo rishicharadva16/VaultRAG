@@ -80,33 +80,50 @@ def setup_database():
         conn.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS question_length INTEGER;"))
         conn.execute(text("UPDATE audit_log SET event_type = event WHERE event_type IS NULL AND event IS NOT NULL;"))
         conn.execute(text("UPDATE audit_log SET created_at = ts WHERE created_at IS NULL AND ts IS NOT NULL;"))
+
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS shown_in_demo BOOLEAN DEFAULT FALSE;"))
+
+        # Step 6 migrations for documents and document_shares
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_documents_source_id ON documents (source_id);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_documents_owner_id ON documents (owner_id);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_documents_sha256 ON documents (sha256);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_document_shares_doc_id ON document_shares (document_id);"))
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_document_shares_grantee ON document_shares (document_id, grantee_type, grantee_value);"))
+        conn.execute(text("ALTER TABLE document_shares ADD COLUMN IF NOT EXISTS include_sensitive BOOLEAN DEFAULT FALSE;"))
         conn.commit()
 
     db = TestSession()
     try:
         pw_hash = hash_password(SEED_PASSWORD)
+        demo_visible_ids = {"u_admin", "u_meera", "u_karan", "u_asha"}
         for u in SEED_USERS:
             existing = db.query(User).filter(
                 (User.email == u["email"]) | (User.external_id == u["user_id"])
             ).first()
+            user_roles = u["roles"]
+            if settings.ACCESS_MODEL == "department":
+                user_roles = ["admin"] if "admin" in u["roles"] else ["employee"]
+            is_visible = u["user_id"] in demo_visible_ids
             if existing:
                 existing.name = u["name"]
                 existing.email = u["email"]
                 existing.password_hash = pw_hash
-                existing.roles = u["roles"]
+                existing.roles = user_roles
                 existing.employee_id = u["employee_id"]
                 existing.department = u["department"]
                 existing.external_id = u["user_id"]
+                existing.shown_in_demo = is_visible
                 existing.active = True
             else:
                 db.add(User(
                     name=u["name"],
                     email=u["email"],
                     password_hash=pw_hash,
-                    roles=u["roles"],
+                    roles=user_roles,
                     employee_id=u["employee_id"],
                     department=u["department"],
                     external_id=u["user_id"],
+                    shown_in_demo=is_visible,
                     active=True,
                 ))
         db.commit()

@@ -25,11 +25,11 @@ export function formatLatency(latencyMs: number): string {
 }
 
 export function formatSourceLabel(file: string, page?: number | null, rowId?: string | null): string {
+  if (rowId) {
+    return `${file} - ${rowId}`;
+  }
   if (page !== null && page !== undefined) {
     return `${file} • p. ${page}`;
-  }
-  if (rowId) {
-    return `${file} • row ${rowId}`;
   }
   return file;
 }

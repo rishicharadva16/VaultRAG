@@ -45,6 +45,7 @@ def _check_ask_rate(user_id: str) -> bool:
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=500, description="Question to answer")
     top_k: int = Field(5, ge=1, le=20, description="Max context chunks")
+    source_ids: list[str] | None = Field(None, description="Optional list of source_ids to filter by (max 10)")
 
 
 class HighlightOut(BaseModel):
@@ -59,6 +60,9 @@ class CitationOut(BaseModel):
     file: str
     page: int | None = None
     row_id: str | None = None
+    kind: str | None = None
+    ocr_confidence: float | None = None
+    boxes: list[dict] | None = None
     snippet: str
     highlights: list[HighlightOut] = []
     highlight_text: str = ""
@@ -77,7 +81,12 @@ class ChunkResponse(BaseModel):
     file: str
     page: int | None = None
     row_id: str | None = None
+    kind: str | None = None
     text: str
+    boxes: list[dict] | None = None
+    image_width: int | None = None
+    image_height: int | None = None
+    ocr_confidence: float | None = None
 
 
 # ── Endpoints ─────────────────────────────────────────────────
@@ -107,6 +116,7 @@ def ask(
             principal=principal,
             question=body.question,
             top_k=body.top_k,
+            source_ids=body.source_ids,
         )
     except ValueError:
         raise HTTPException(
@@ -178,6 +188,9 @@ def ask(
                 file=c.file,
                 page=c.page,
                 row_id=c.row_id,
+                kind=getattr(c, "kind", None),
+                ocr_confidence=getattr(c, "ocr_confidence", None),
+                boxes=getattr(c, "boxes", None),
                 snippet=c.snippet,
                 highlights=[HighlightOut(start=h.start, end=h.end) for h in c.highlights],
                 highlight_text=c.highlight_text,
@@ -237,5 +250,10 @@ def get_citation(
         file=chunk.file,
         page=chunk.page,
         row_id=chunk.row_id,
+        kind=chunk.kind,
         text=chunk.text,
+        boxes=chunk.boxes,
+        image_width=chunk.image_width,
+        image_height=chunk.image_height,
+        ocr_confidence=chunk.ocr_confidence,
     )

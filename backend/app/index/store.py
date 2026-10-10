@@ -19,7 +19,7 @@ from app.config import settings
 from app.security.principals import Principal
 
 # Payload index definitions: (field_name, schema_type)
-_KEYWORD_FIELDS = ["acl_tokens", "doc_id", "source_doc", "source_type", "corpus", "owner_id"]
+_KEYWORD_FIELDS = ["acl_tokens", "doc_id", "source_id", "source_doc", "source_type", "corpus", "owner_id"]
 _INTEGER_FIELDS: list[str] = []
 _BOOL_FIELDS = ["deleted"]
 
@@ -34,6 +34,14 @@ class SearchResult:
     text: str
     score: float
     row_id: str | None = None
+    kind: str | None = None
+    boxes: list[dict] | None = None
+    ocr_confidence: float | None = None
+    image_width: int | None = None
+    image_height: int | None = None
+    file_ref: str | None = None
+    flagged: bool | None = None
+    is_sensitive: bool | None = None
 
     def to_dict(self) -> dict[str, Any]:
         d = {
@@ -47,6 +55,20 @@ class SearchResult:
         }
         if self.row_id is not None:
             d["row_id"] = self.row_id
+        if self.kind is not None:
+            d["kind"] = self.kind
+        if self.boxes is not None:
+            d["boxes"] = self.boxes
+        if self.ocr_confidence is not None:
+            d["ocr_confidence"] = self.ocr_confidence
+        if self.image_width is not None:
+            d["image_width"] = self.image_width
+        if self.image_height is not None:
+            d["image_height"] = self.image_height
+        if self.flagged is not None:
+            d["flagged"] = self.flagged
+        if self.is_sensitive is not None:
+            d["is_sensitive"] = self.is_sensitive
         return d
 
 
@@ -207,6 +229,117 @@ class SecureStore:
             ),
         )
 
+    def delete_by_source_id(self, source_id: str, collection: str | None = None) -> None:
+        """Remove all points for a given source_id (Step 6 live uploads)."""
+        name = collection or settings.QDRANT_COLLECTION
+        self._client.delete(
+            collection_name=name,
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[models.FieldCondition(
+                        key="source_id",
+                        match=models.MatchValue(value=source_id),
+                    )]
+                )
+            ),
+        )
+
+    def count_by_source_id(self, source_id: str, collection: str | None = None) -> int:
+        """Count points for a given source_id."""
+        name = collection or settings.QDRANT_COLLECTION
+        res = self._client.count(
+            collection_name=name,
+            count_filter=models.Filter(
+                must=[models.FieldCondition(
+                    key="source_id",
+                    match=models.MatchValue(value=source_id),
+                )]
+            ),
+            exact=True,
+        )
+        return res.count
+
+    def set_acl_by_source_id(
+        self,
+        source_id: str,
+        tokens: list[str],
+        sensitive_tokens: list[str] | None = None,
+        collection: str | None = None,
+        batch_size: int = 100,
+    ) -> dict[str, int]:
+        """
+        Update acl_tokens in place for all points of a source_id WITHOUT re-embedding.
+        For sensitive chunks (is_sensitive=True or chunk_id ending in :sensitive):
+          - If sensitive_tokens is provided, set their acl_tokens to sensitive_tokens.
+          - Otherwise, keep their existing acl_tokens unchanged.
+        For normal chunks:
+          - Set acl_tokens to tokens.
+        """
+        name = collection or settings.QDRANT_COLLECTION
+        updated = 0
+        offset = None
+        operations: list[models.SetPayloadOperation] = []
+
+        scroll_filter = models.Filter(
+            must=[models.FieldCondition(
+                key="source_id",
+                match=models.MatchValue(value=source_id),
+            )]
+        )
+
+        while True:
+            points, next_offset = self._client.scroll(
+                collection_name=name,
+                scroll_filter=scroll_filter,
+                limit=batch_size,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            for pt in points:
+                payload = pt.payload or {}
+                chunk_id = str(payload.get("chunk_id", ""))
+                is_sens = payload.get("is_sensitive", False) or chunk_id.endswith(":sensitive")
+
+                if is_sens:
+                    if sensitive_tokens is not None:
+                        new_tokens = sorted(set(sensitive_tokens))
+                        operations.append(
+                            models.SetPayloadOperation(
+                                set_payload=models.SetPayload(
+                                    payload={"acl_tokens": new_tokens},
+                                    points=[pt.id],
+                                )
+                            )
+                        )
+                        updated += 1
+                else:
+                    new_tokens = sorted(set(tokens))
+                    operations.append(
+                        models.SetPayloadOperation(
+                            set_payload=models.SetPayload(
+                                payload={"acl_tokens": new_tokens},
+                                points=[pt.id],
+                            )
+                        )
+                    )
+                    updated += 1
+
+            if next_offset is None:
+                break
+            offset = next_offset
+
+        if operations:
+            for i in range(0, len(operations), batch_size):
+                batch_ops = operations[i : i + batch_size]
+                self._client.batch_update_points(
+                    collection_name=name,
+                    update_operations=batch_ops,
+                    wait=True,
+                )
+
+        return {"updated": updated}
+
     # ── Read helpers ──────────────────────────────────────────
 
     def admin_scroll(
@@ -234,6 +367,117 @@ class SecureStore:
             with_vectors=False,
         )
         return points
+
+    def get_accessible_employee_entities(self, principal: "Principal") -> list[dict[str, str]]:
+        """
+        Query employee metadata (name, first_name, last_name, employee_id, department)
+        that the given principal is authorized to read, strictly enforced in Qdrant via
+        MatchAny on acl_tokens.
+        Fail-closed: returns [] if principal has no tokens.
+        """
+        if principal is None or not getattr(principal, "tokens", None):
+            return []
+
+        name = settings.QDRANT_COLLECTION
+        scroll_filter = models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="acl_tokens",
+                    match=models.MatchAny(any=list(principal.tokens)),
+                ),
+                models.FieldCondition(
+                    key="source_id",
+                    match=models.MatchValue(value="db:employees"),
+                ),
+                models.FieldCondition(
+                    key="chunk_id",
+                    match=models.MatchText(text="base"),
+                ),
+            ]
+        )
+        try:
+            points, _ = self._client.scroll(
+                collection_name=name,
+                scroll_filter=scroll_filter,
+                limit=100,
+                with_payload=True,
+                with_vectors=False,
+            )
+        except Exception:
+            return []
+
+        entities = []
+        for p in points:
+            payload = p.payload or {}
+            text = payload.get("text", "")
+            row_id = str(payload.get("row_id") or payload.get("row_pk") or "")
+            name_val = ""
+            if "name " in text and ", email" in text:
+                name_val = text.split("name ")[1].split(", email")[0].strip()
+            dept_val = ""
+            if "department " in text and ", designation" in text:
+                dept_val = text.split("department ")[1].split(", designation")[0].strip()
+
+            if name_val and row_id:
+                parts = name_val.split()
+                entities.append({
+                    "name": name_val,
+                    "first_name": parts[0],
+                    "last_name": parts[-1] if len(parts) > 1 else "",
+                    "employee_id": row_id,
+                    "department": dept_val,
+                })
+        return entities
+
+    def scroll_all_points(self, collection: str | None = None, batch_size: int = 100) -> list[Any]:
+        """
+        Scroll through all points in collection with payloads (for admin/script retagging).
+        """
+        name = collection or settings.QDRANT_COLLECTION
+        all_points = []
+        offset = None
+        while True:
+            pts, next_offset = self._client.scroll(
+                collection_name=name,
+                limit=batch_size,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            all_points.extend(pts)
+            if next_offset is None:
+                break
+            offset = next_offset
+        return all_points
+
+    def batch_update_acl_tokens(
+        self,
+        point_tokens: list[tuple[Any, list[str]]],
+        collection: str | None = None,
+        batch_size: int = 100,
+    ) -> int:
+        """
+        Update acl_tokens in place for multiple points using set_payload (without re-embedding).
+        point_tokens: list of (point_id, new_tokens)
+        """
+        name = collection or settings.QDRANT_COLLECTION
+        operations = [
+            models.SetPayloadOperation(
+                set_payload=models.SetPayload(
+                    payload={"acl_tokens": sorted(set(tokens))},
+                    points=[pid],
+                )
+            )
+            for pid, tokens in point_tokens
+        ]
+        for i in range(0, len(operations), batch_size):
+            batch = operations[i : i + batch_size]
+            self._client.batch_update_points(
+                collection_name=name,
+                update_operations=batch,
+                wait=True,
+            )
+        return len(operations)
 
     def count(self, doc_id: str | None = None, collection: str | None = None) -> int:
         """Count points, optionally filtered by doc_id."""
@@ -266,6 +510,7 @@ class SecureStore:
         query: str | tuple[list[float], dict] | list | dict,
         top_k: int = 5,
         include_poison: bool = False,
+        source_ids: list[str] | None = None,
         collection: str | None = None,
     ) -> list["SearchResult"]:
         """
@@ -278,12 +523,28 @@ class SecureStore:
           - Hybrid retrieval (dense + sparse) fused with RRF.
           - Access filter (acl_tokens MatchAny principal.tokens) applied to BOTH
             prefetches and to the final query.
+          - Optional source_ids filter ANDed with access filter (never replaces it).
           - Corpus "poison_test" excluded unless include_poison=True.
           - Plain SearchResult objects without exposing acl_tokens.
         """
         # C2: Fail closed - no tokens means no accessible documents
         if principal is None or not getattr(principal, "tokens", None):
             return []
+
+        # Optional source_ids filter validation: if given as empty list, matches nothing
+        if source_ids is not None:
+            if not source_ids:
+                return []
+            raw_ids = [s.strip() for s in source_ids if s and isinstance(s, str)][:10]
+            if not raw_ids:
+                return []
+            valid_source_ids = []
+            for s in raw_ids:
+                valid_source_ids.append(s)
+                if not any(s.startswith(p) for p in ("upl:", "pdf:", "img:", "db:", "poison:")):
+                    valid_source_ids.append(f"upl:{s}")
+        else:
+            valid_source_ids = None
 
         # C5: Clamp top_k to 1..20
         top_k = max(1, min(20, int(top_k)))
@@ -314,6 +575,14 @@ class SecureStore:
                 match=models.MatchAny(any=list(principal.tokens)),
             )
         ]
+
+        if valid_source_ids is not None:
+            must_conditions.append(
+                models.FieldCondition(
+                    key="source_id",
+                    match=models.MatchAny(any=valid_source_ids),
+                )
+            )
 
         must_not_conditions: list[models.FieldCondition] = [
             models.FieldCondition(
@@ -380,6 +649,14 @@ class SecureStore:
                     text=str(payload.get("text", "")),
                     score=float(pt.score) if pt.score is not None else 0.0,
                     row_id=payload.get("row_id") or payload.get("row_pk"),
+                    kind=payload.get("kind"),
+                    boxes=payload.get("boxes"),
+                    ocr_confidence=payload.get("ocr_confidence"),
+                    image_width=payload.get("image_width"),
+                    image_height=payload.get("image_height"),
+                    file_ref=payload.get("file_ref"),
+                    flagged=payload.get("flagged"),
+                    is_sensitive=payload.get("is_sensitive"),
                 )
             )
 
@@ -390,6 +667,7 @@ class SecureStore:
         principal: "Principal",
         chunk_id: str,
         collection: str | None = None,
+        include_poison: bool = False,
     ) -> "SearchResult | None":
         """
         Fetch a single chunk by chunk_id, ONLY if the principal may see it.
@@ -403,28 +681,34 @@ class SecureStore:
         name = collection or settings.QDRANT_COLLECTION
         pid = make_point_id(chunk_id)
 
-        # ACL filter: same logic as search
-        access_filter = models.Filter(
-            must=[
-                models.FieldCondition(
-                    key="acl_tokens",
-                    match=models.MatchAny(any=list(principal.tokens)),
-                ),
-                models.FieldCondition(
-                    key="chunk_id",
-                    match=models.MatchValue(value=chunk_id),
-                ),
-            ],
-            must_not=[
-                models.FieldCondition(
-                    key="deleted",
-                    match=models.MatchValue(value=True),
-                ),
+        must_conditions = [
+            models.FieldCondition(
+                key="acl_tokens",
+                match=models.MatchAny(any=list(principal.tokens)),
+            ),
+            models.FieldCondition(
+                key="chunk_id",
+                match=models.MatchValue(value=chunk_id),
+            ),
+        ]
+        must_not_conditions = [
+            models.FieldCondition(
+                key="deleted",
+                match=models.MatchValue(value=True),
+            ),
+        ]
+        if not include_poison and not chunk_id.startswith("poison:"):
+            must_not_conditions.append(
                 models.FieldCondition(
                     key="corpus",
                     match=models.MatchValue(value="poison_test"),
-                ),
-            ],
+                )
+            )
+
+        # ACL filter: same logic as search
+        access_filter = models.Filter(
+            must=must_conditions,
+            must_not=must_not_conditions,
         )
 
         try:
@@ -452,7 +736,95 @@ class SecureStore:
             text=str(payload.get("text", "")),
             score=0.0,
             row_id=payload.get("row_id") or payload.get("row_pk"),
+            kind=payload.get("kind"),
+            boxes=payload.get("boxes"),
+            ocr_confidence=payload.get("ocr_confidence"),
+            image_width=payload.get("image_width"),
+            image_height=payload.get("image_height"),
+            file_ref=payload.get("file_ref"),
+            flagged=payload.get("flagged"),
+            is_sensitive=payload.get("is_sensitive"),
         )
+
+    def get_readable_pages(
+        self,
+        principal: "Principal",
+        source_id: str,
+        collection: str | None = None,
+        include_poison: bool = False,
+    ) -> list[int]:
+        """
+        Return sorted list of 1-indexed page numbers for a document (source_id)
+        on which the principal can read at least one chunk.
+        Enforced strictly inside Qdrant via MatchAny on acl_tokens.
+        """
+        if principal is None or not getattr(principal, "tokens", None):
+            return []
+
+        name = collection or settings.QDRANT_COLLECTION
+
+        must_conditions = [
+            models.FieldCondition(
+                key="acl_tokens",
+                match=models.MatchAny(any=list(principal.tokens)),
+            ),
+            models.FieldCondition(
+                key="source_id",
+                match=models.MatchValue(value=source_id),
+            ),
+        ]
+        must_not_conditions = [
+            models.FieldCondition(
+                key="deleted",
+                match=models.MatchValue(value=True),
+            ),
+        ]
+        if not include_poison and not source_id.startswith("poison:"):
+            must_not_conditions.append(
+                models.FieldCondition(
+                    key="corpus",
+                    match=models.MatchValue(value="poison_test"),
+                )
+            )
+
+        scroll_filter = models.Filter(
+            must=must_conditions,
+            must_not=must_not_conditions,
+        )
+
+        readable_pages: set[int] = set()
+        offset = None
+
+        while True:
+            try:
+                points, next_offset = self._client.scroll(
+                    collection_name=name,
+                    scroll_filter=scroll_filter,
+                    limit=100,
+                    offset=offset,
+                    with_payload=True,
+                    with_vectors=False,
+                )
+            except Exception:
+                break
+
+            for pt in points:
+                p_num = (pt.payload or {}).get("page")
+                if isinstance(p_num, int):
+                    readable_pages.add(p_num)
+
+            if next_offset is None:
+                break
+            offset = next_offset
+
+        return sorted(readable_pages)
+
+    def delete_points(self, chunk_ids: list[str], collection: str | None = None) -> None:
+        """Delete points by chunk_ids using deterministic point_id mapping."""
+        from app.index.schema import point_id as make_point_id
+        name = collection or settings.QDRANT_COLLECTION
+        pids = [make_point_id(cid) for cid in chunk_ids]
+        self._client.delete(collection_name=name, points_selector=pids)
 
     # ── Admin Access Switch (In-Place Payload Update) ──────────
 

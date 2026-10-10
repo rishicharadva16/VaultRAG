@@ -45,6 +45,7 @@ class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=500, description="Search query string")
     top_k: int = Field(5, ge=1, le=20, description="Number of results to return (1-20)")
     rerank: bool = Field(False, description="Whether to rerank results using cross-encoder")
+    source_ids: list[str] | None = Field(None, description="Optional list of source_ids to filter by (max 10)")
 
 
 class SearchResultItem(BaseModel):
@@ -102,6 +103,7 @@ def search_documents(
         query=request.query,
         top_k=request.top_k,
         include_poison=False,
+        source_ids=request.source_ids,
     )
 
     # D1-D2: Optional reranking if requested or enabled globally

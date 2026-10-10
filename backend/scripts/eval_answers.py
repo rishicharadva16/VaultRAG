@@ -66,16 +66,8 @@ def doc_of(src: str) -> str:
 
 def is_evaluable_question(q: dict) -> bool:
     """
-    Returns True for PDF and Database questions.
-    Keeps questions requiring image OCR skipped until Step 4b.
+    Returns True for all eval questions now that PDFs, DB records, and Images are all ingested (Step 4b).
     """
-    q_type = q.get("type", "")
-    if "image" in q_type:
-        return False
-    exp = q.get("expected_sources", [])
-    bad = q.get("must_not_cite", [])
-    if any(s.startswith("img:") for s in exp) or any(s.startswith("img:") for s in bad):
-        return False
     return True
 
 

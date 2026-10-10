@@ -42,29 +42,29 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({
 
   return (
     <article
-      className={`rounded-card border border-border bg-surface p-4 transition-colors space-y-4 shadow-xs ${className}`}
+      className={`relative rounded-card border border-border bg-surface p-5 transition-all shadow-soft space-y-4 before:content-[""] before:absolute before:left-0 before:top-3 before:bottom-3 before:w-1.5 before:rounded-r before:bg-brand-gradient ${className}`}
       data-testid="answer-card"
     >
-      {/* Top Header: Verification & Meta */}
+      {/* Top Header Row: Verified Answer pill, Response time chip, Copy button */}
       <div className="flex items-center justify-between border-b border-border-subtle pb-3">
         <div className="flex items-center gap-2">
           {response.verified ? (
             <span
-              className="inline-flex items-center gap-1.5 rounded-badge border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+              className="inline-flex items-center gap-1.5 rounded-badge border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300"
               data-testid="verified-badge"
             >
               <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
               <span>Verified Answer</span>
             </span>
           ) : (
-            <span className="text-xs font-medium text-text-muted">Unverified Response</span>
+            <span className="text-xs font-medium text-text-muted">Grounded Response</span>
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-text-muted">
+        <div className="flex items-center gap-2.5 text-xs text-text-muted">
           {latencyMs !== undefined && (
-            <span className="flex items-center gap-1">
-              <Clock size={12} aria-hidden="true" />
+            <span className="flex items-center gap-1 bg-surface-2 px-2 py-0.5 rounded-btn border border-border text-[11px] font-mono">
+              <Clock size={11} aria-hidden="true" />
               <span>{formatLatency(latencyMs)}</span>
             </span>
           )}
@@ -72,7 +72,7 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({
             type="button"
             onClick={handleCopy}
             aria-label="Copy plain answer text"
-            className="flex items-center gap-1 rounded-btn px-2 py-1 text-xs font-medium text-text-muted hover:bg-surface-raised hover:text-text transition-colors"
+            className="flex items-center gap-1.5 rounded-btn px-2.5 py-1 text-xs font-semibold text-text-muted hover:bg-surface-2 hover:text-text transition-colors min-h-[32px]"
           >
             {copied ? (
               <>
@@ -91,12 +91,11 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({
 
       {/* Answer Body - Strictly Plain Text with Interactive Citation Markers */}
       <div
-        className="text-sm font-normal text-text leading-relaxed whitespace-pre-wrap"
+        className="text-sm sm:text-base font-normal text-text leading-relaxed whitespace-pre-wrap"
         data-testid="answer-text"
       >
         {parsedSegments.map((seg, idx) => {
           if (seg.type === 'text') {
-            // Rendered strictly as text node - safe from XSS, no markdown / HTML execution
             return <React.Fragment key={idx}>{seg.content}</React.Fragment>;
           }
 
@@ -117,10 +116,10 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({
         })}
       </div>
 
-      {/* Sources List */}
+      {/* Sources Section */}
       {response.citations.length > 0 && (
-        <div className="border-t border-border-subtle pt-3 space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+        <div className="border-t border-border-subtle pt-3.5 space-y-2.5">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
             Sources ({response.citations.length})
           </div>
           <div className="flex flex-wrap gap-2" data-testid="sources-list">

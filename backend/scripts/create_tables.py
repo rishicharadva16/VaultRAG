@@ -37,6 +37,15 @@ def create_tables():
         # Backfill existing event -> event_type and ts -> created_at if NULL
         conn.execute(text("UPDATE audit_log SET event_type = event WHERE event_type IS NULL AND event IS NOT NULL;"))
         conn.execute(text("UPDATE audit_log SET created_at = ts WHERE created_at IS NULL AND ts IS NOT NULL;"))
+
+        # Step 6: Idempotent migration for documents and document_shares
+        print("Applying migrations for documents and document_shares …")
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_documents_source_id ON documents (source_id);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_documents_owner_id ON documents (owner_id);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_documents_sha256 ON documents (sha256);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_document_shares_doc_id ON document_shares (document_id);"))
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_document_shares_grantee ON document_shares (document_id, grantee_type, grantee_value);"))
+        conn.execute(text("ALTER TABLE document_shares ADD COLUMN IF NOT EXISTS include_sensitive BOOLEAN DEFAULT FALSE;"))
         conn.commit()
 
     print("Done.")

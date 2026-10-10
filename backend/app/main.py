@@ -3,13 +3,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import admin, ask, auth, health, search
+from app.api import admin, ask, auth, health, search, images, source, documents
 from app.config import settings
+from app.db.models import Document
+from app.db.session import SessionLocal
+from app.ingestion.live_upload import start_upload_worker
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load embedding and sparse models (and reranker if enabled) once at startup."""
+    """Load models, recover interrupted documents, and launch upload worker."""
     from app.index.embedder import DenseEmbedder, SparseEmbedder
 
     DenseEmbedder()._load()
@@ -19,6 +22,21 @@ async def lifespan(app: FastAPI):
         from app.rag.reranker import Reranker
 
         Reranker()._load()
+
+    # Step 6: Mark interrupted documents on startup
+    try:
+        with SessionLocal() as db:
+            interrupted = db.query(Document).filter(Document.status == "processing").all()
+            for doc in interrupted:
+                doc.status = "failed"
+                doc.reason_code = "interrupted"
+            if interrupted:
+                db.commit()
+    except Exception:
+        pass
+
+    # Start single sequential upload worker
+    await start_upload_worker()
 
     yield
 
@@ -31,13 +49,13 @@ app = FastAPI(
 )
 
 # CORS – configurable via CORS_ORIGINS in .env (comma-separated).
-# Never uses "*". Never allows "null".
+# Allows GET, POST, DELETE, PUT, PATCH, OPTIONS for multipart uploads and management.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list(),
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 app.include_router(health.router)
@@ -45,6 +63,9 @@ app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(search.router)
 app.include_router(ask.router)
+app.include_router(images.router)
+app.include_router(source.router)
+app.include_router(documents.router)
 
 # A1: /me as a top-level alias of /auth/me (same handler, same response)
 app.get("/me", response_model=auth.MeResponse, tags=["auth"])(auth.me)

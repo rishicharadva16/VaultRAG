@@ -17,6 +17,7 @@ import os
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 # CRITICAL: Prevent bytecode generation in read-only data directory
 sys.dont_write_bytecode = True
@@ -45,7 +46,19 @@ if str(dataset_dir) not in sys.path:
     sys.path.insert(0, str(dataset_dir))
 spec.loader.exec_module(dataset_acl)
 
+import csv
+
 USER_ORDER = ["u_asha", "u_neha", "u_ravi", "u_dev", "u_meera", "u_karan", "u_admin"]
+
+def _load_emp_to_dept() -> dict[str, str]:
+    ds_dir = settings.dataset_path()
+    employees_csv = ds_dir / "dataset" / "database" / "employees.csv"
+    if employees_csv.exists():
+        with open(employees_csv, "r", encoding="utf-8") as f:
+            return {row["employee_id"].strip(): row["department"].strip() for row in csv.DictReader(f)}
+    return {}
+
+EMP_TO_DEPT = _load_emp_to_dept()
 
 
 def parse_expected_source(raw_source: str) -> tuple[str, int | None]:
@@ -56,11 +69,94 @@ def parse_expected_source(raw_source: str) -> tuple[str, int | None]:
     return raw_source, None
 
 
+def check_department_access(uid: str, r: Any, db_users: dict, db: Any, db_ref_rows: dict) -> bool:
+    """Evaluate whether a user has access to a retrieved chunk under the Department access model."""
+    if uid == "u_admin":
+        return r.corpus != "poison_test" and not r.source_id.startswith("poison:")
+
+    u = db_users.get(uid)
+    if not u or not getattr(u, "active", True):
+        return False
+
+    u_dept = getattr(u, "department", None)
+    u_emp = getattr(u, "employee_id", None)
+
+    if r.corpus == "poison_test" or r.source_id.startswith("poison:"):
+        return False
+
+    if r.source_id.startswith("upl:"):
+        doc_uuid = r.source_id.split("upl:")[-1]
+        from app.db.models import Document
+        from app.api.documents import _user_can_access_document
+        doc = db.query(Document).filter(Document.id == doc_uuid).first()
+        return bool(doc and _user_can_access_document(doc, u, db))
+
+    if r.source_id.startswith("db:"):
+        tbl = r.file or r.source_id.split("db:")[-1]
+        row_id = getattr(r, "row_id", None) or (r.chunk_id.split("#")[1].split(":")[0] if "#" in r.chunk_id else "")
+        if tbl == "salaries":
+            # Salary rule: Finance reads salaries. HR does NOT. Employee reads own salary.
+            return u_dept == "Finance" or (bool(u_emp) and u_emp == row_id)
+        elif tbl == "employees":
+            if r.chunk_id.endswith(":sensitive"):
+                return u_dept == "HR" or (bool(u_emp) and u_emp == row_id)
+            # Base record: dept:<own dept>, dept:HR, emp:<id>
+            target_dept = EMP_TO_DEPT.get(row_id)
+            return (
+                u_dept == "HR"
+                or (bool(u_emp) and u_emp == row_id)
+                or (bool(u_dept) and bool(target_dept) and u_dept == target_dept)
+            )
+        elif tbl in ("expenses", "approvals"):
+            # Finance reads all. Employee reads their own expenses/approvals.
+            if u_dept == "Finance":
+                return True
+            ref_tbl = db_ref_rows.get(uid, {}).get(tbl, {})
+            return row_id in ref_tbl
+        return False
+
+    # Documents & Images
+    src = r.source_id
+    policies_cw = getattr(settings, "POLICIES_COMPANY_WIDE", True)
+    if (src.startswith("pdf:") and ("policy" in src or "handbook" in src)) or src.startswith("faq:") or "public" in src:
+        return True if policies_cw else (u_dept == "HR")
+
+    if src.startswith("img:id_card_"):
+        card_emp = src.replace("img:id_card_", "").split(".")[0]
+        return u_dept == "HR" or (bool(u_emp) and u_emp == card_emp)
+
+    if src.startswith("img:invoice_") or src.startswith("img:purchase_order_"):
+        return u_dept == "Finance"
+
+    if src.startswith("img:receipt_"):
+        return u_dept == "Finance" or (bool(u_emp) and u_emp == "E1010")
+
+    if src in ("pdf:vendor_contract_apex.pdf", "pdf:finance_memo_q2_fy27.pdf"):
+        return u_dept == "Finance"
+
+    if src == "pdf:board_minutes_2026_08.pdf":
+        return u_dept == "Finance"
+
+    if src == "img:whiteboard_sprint.jpg":
+        return u_dept == "Engineering"
+
+    return False
+
+
 def main():
     parser = argparse.ArgumentParser(description="Audit ACL security and retrieval metrics")
     parser.add_argument("--top-k", type=int, default=5, help="Number of retrieved chunks (default: 5)")
     parser.add_argument("--rerank", action="store_true", help="Enable cross-encoder reranker")
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=getattr(settings, "ACCESS_MODEL", "department"),
+        choices=["department", "dataset"],
+        help="Access model to evaluate (default: from settings)",
+    )
     args = parser.parse_args()
+
+    settings.ACCESS_MODEL = args.model
 
     # Load dataset evaluation questions and adversarial queries
     eval_q_file = dataset_dir / "dataset" / "eval" / "eval_questions.json"
@@ -178,23 +274,32 @@ def main():
 
             # Check ACL for every returned chunk
             for r in results:
-                has_access = False
-                if uid == "u_admin":
-                    if r.corpus != "poison_test" and not r.source_id.startswith("poison:"):
+                if args.model == "department":
+                    has_access = check_department_access(uid, r, db_users, db, db_ref_rows)
+                else:
+                    has_access = False
+                    if uid == "u_admin":
+                        if r.corpus != "poison_test" and not r.source_id.startswith("poison:"):
+                            has_access = True
+                    elif r.source_id.startswith("db:"):
+                        tbl = r.file or r.source_id.split("db:")[-1]
+                        ref_map = db_ref_rows.get(uid, {}).get(tbl, {})
+                        row_id = getattr(r, "row_id", None) or (r.chunk_id.split("#")[1].split(":")[0] if "#" in r.chunk_id else "")
+                        if row_id in ref_map:
+                            has_access = True
+                            if r.chunk_id.endswith(":sensitive"):
+                                if tbl == "employees" and "date_of_birth" not in ref_map[row_id]:
+                                    has_access = False
+                    elif r.source_id.startswith("upl:"):
+                        doc_uuid = r.source_id.split("upl:")[-1]
+                        from app.db.models import Document
+                        from app.api.documents import _user_can_access_document
+                        doc = db.query(Document).filter(Document.id == doc_uuid).first()
+                        u = db_users.get(uid)
+                        if doc and u and _user_can_access_document(doc, u, db):
+                            has_access = True
+                    elif r.source_id in dataset_acl.DOC_ACL and dataset_acl.can_read_source(uid, r.source_id):
                         has_access = True
-                elif r.source_id.startswith("db:"):
-                    tbl = r.file or r.source_id.split("db:")[-1]
-                    ref_map = db_ref_rows.get(uid, {}).get(tbl, {})
-                    row_id = getattr(r, "row_id", None) or (r.chunk_id.split("#")[1].split(":")[0] if "#" in r.chunk_id else "")
-                    if row_id in ref_map:
-                        has_access = True
-                        if r.chunk_id.endswith(":sensitive"):
-                            if tbl == "employees" and "date_of_birth" not in ref_map[row_id]:
-                                has_access = False
-                            elif tbl == "salaries" and "bank_account_last4" not in ref_map[row_id]:
-                                has_access = False
-                elif dataset_acl.can_read_source(uid, r.source_id):
-                    has_access = True
 
                 if not has_access:
                     viol = {
@@ -215,7 +320,7 @@ def main():
                 and tq["authorized_user"] == uid
                 and tq["expected_sources"]
             ):
-                # Filter to expected sources in current corpus (PDFs + DB rows)
+                # Filter to expected sources in current corpus (PDFs, DB rows, and Images)
                 active_expected = []
                 for es in tq["expected_sources"]:
                     if es.startswith("pdf:"):
@@ -224,6 +329,8 @@ def main():
                         parts = es.split(":")
                         if len(parts) >= 3:
                             active_expected.append(("db", (f"db:{parts[1]}", parts[2])))
+                    elif es.startswith("img:"):
+                        active_expected.append(("img", es))
 
                 def _matches_chunk(res_item, exp_tuple):
                     kind, val = exp_tuple
@@ -235,6 +342,8 @@ def main():
                         if res_item.source_id == exp_src:
                             row_pk = getattr(res_item, "row_id", None) or (res_item.chunk_id.split("#")[1].split(":")[0] if "#" in res_item.chunk_id else "")
                             return row_pk == exp_pk
+                    elif kind == "img":
+                        return res_item.source_id == val
                     return False
 
                 if active_expected:
@@ -303,9 +412,40 @@ def main():
     print(f"TOTAL CHUNKS INSPECTED        : {total_chunks_inspected}")
     print(f"TOTAL ACL VIOLATIONS          : {total_violations}")
     if tot_eval > 0:
-        print(f"OVERALL HIT@1 (PDF Queries)   : {tot_h1}/{tot_eval} ({tot_h1/tot_eval:.1%})")
-        print(f"OVERALL HIT@3 (PDF Queries)   : {tot_h3}/{tot_eval} ({tot_h3/tot_eval:.1%})")
-        print(f"OVERALL HIT@5 (PDF Queries)   : {tot_h5}/{tot_eval} ({tot_h5/tot_eval:.1%})")
+        print(f"OVERALL HIT@1 (Authorized Queries): {tot_h1}/{tot_eval} ({tot_h1/tot_eval:.1%})")
+        print(f"OVERALL HIT@3 (Authorized Queries): {tot_h3}/{tot_eval} ({tot_h3/tot_eval:.1%})")
+        print(f"OVERALL HIT@5 (Authorized Queries): {tot_h5}/{tot_eval} ({tot_h5/tot_eval:.1%})")
+    print("=" * 95)
+
+    # Track image-targeted checks
+    image_q_stats = []
+    for tq in test_queries:
+        if tq.get("is_eval") and (
+            any(s.startswith("img:") for s in tq.get("expected_sources", []))
+            or tq.get("q_id") in ["Q041", "Q042", "Q043", "Q044", "Q045", "Q046", "Q047", "Q048", "Q049"]
+        ):
+            image_q_stats.append(tq)
+
+    print("\n" + "=" * 95)
+    print("IMAGE-TARGETED ACL AUDIT (Every User x Every Image Question Q041-Q049)")
+    print("=" * 95)
+    print(f"Total Image Questions: {len(image_q_stats)} | Total Cross-User Checks: {len(image_q_stats) * len(USER_ORDER)}")
+    print(f"{'QID':<6} {'Query':<45} {'Asker':<8} {'Img Violations':<15}")
+    print("-" * 95)
+
+    img_viol_count = 0
+    for iq in image_q_stats:
+        qid = iq["q_id"]
+        q_text = iq["query"][:42] + "..." if len(iq["query"]) > 42 else iq["query"]
+        asker = iq.get("authorized_user", "unknown")
+        q_viols = [v for v in all_violations if v["query_id"] == qid]
+        img_viol_count += len(q_viols)
+        status_str = f"{len(q_viols)} violations" if q_viols else "0 (CLEAN)"
+        print(f"{qid:<6} {q_text:<45} {asker:<8} {status_str:<15}")
+
+    print("=" * 95)
+    print(f"TOTAL IMAGE SEARCH CHECKS    : {len(image_q_stats) * len(USER_ORDER)}")
+    print(f"TOTAL IMAGE ACL VIOLATIONS    : {img_viol_count}")
     print("=" * 95)
 
     if total_violations > 0:

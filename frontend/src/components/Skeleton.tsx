@@ -1,14 +1,6 @@
 import React from 'react';
+import { Skeleton as UiSkeleton, SkeletonProps } from './ui/Skeleton';
 
-interface SkeletonProps {
-  className?: string;
-}
-
-export const Skeleton: React.FC<SkeletonProps> = ({ className = 'h-4 w-full' }) => {
-  return (
-    <div
-      aria-hidden="true"
-      className={`animate-pulse rounded bg-slate-200 dark:bg-slate-700/60 ${className}`}
-    />
-  );
+export const Skeleton: React.FC<SkeletonProps> = (props) => {
+  return <UiSkeleton {...props} />;
 };

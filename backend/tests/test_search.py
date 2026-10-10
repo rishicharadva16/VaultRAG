@@ -103,9 +103,12 @@ async def test_principal_role_change_reflected_without_relogin(client: AsyncClie
     sources_before = [r["source_id"] for r in search_res.json()["results"]]
     assert "pdf:vendor_contract_apex.pdf" not in sources_before
 
-    # 3. Elevate Asha in DB to manager
+    # 3. Elevate Asha in DB to manager / Finance department
     user = db.query(User).filter(User.external_id == "u_asha").first()
+    orig_dept = user.department
+    orig_roles = user.roles
     user.roles = ["manager"]
+    user.department = "Finance"
     db.commit()
 
     try:
@@ -115,8 +118,9 @@ async def test_principal_role_change_reflected_without_relogin(client: AsyncClie
         sources_after = [r["source_id"] for r in search_res2.json()["results"]]
         assert "pdf:vendor_contract_apex.pdf" in sources_after
     finally:
-        # Revert role
-        user.roles = ["employee"]
+        # Revert role and department
+        user.roles = orig_roles
+        user.department = orig_dept
         db.commit()
 
 
@@ -156,6 +160,7 @@ async def test_search_with_deactivated_user_returns_401(client: AsyncClient, db:
 # Access Control Separation: Asha, Ravi, Karan, Meera, Admin
 # ---------------------------------------------------------------------------
 
+@pytest.mark.dataset_model
 async def test_acl_separation_vendor_contract(client: AsyncClient):
     """Asha gets no Apex chunks; Ravi and Karan do."""
     # Login as Asha

@@ -23,7 +23,7 @@ class Chunk(BaseModel):
     doc_id: str
     source_doc: str
     source_id: str
-    source_type: Literal["pdf", "md", "html", "image", "db_row"]
+    source_type: Literal["pdf", "md", "html", "image", "db_row", "csv", "text"]
     source_name: str
     corpus: Literal["main", "poison_test"] = "main"
     page: int | None = None
@@ -33,6 +33,11 @@ class Chunk(BaseModel):
     file: str | None = None
     row_id: str | None = None
     kind: str | None = None
+    ocr_confidence: float | None = None
+    boxes: list[dict] | None = None
+    image_width: int | None = None
+    image_height: int | None = None
+    file_ref: str | None = None
     chunk_type: Literal["text", "table"] = "text"
     text: str
     allowed_roles: list[str] = []
@@ -42,6 +47,8 @@ class Chunk(BaseModel):
     classification_label: str = "internal"
     owner_id: str = "u_admin"
     deleted: bool = False
+    flagged: bool = False
+    is_sensitive: bool = False
     created_at: str = ""
 
     @field_validator("allowed_roles", mode="before")

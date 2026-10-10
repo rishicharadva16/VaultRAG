@@ -83,6 +83,33 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     return TokenResponse(access_token=create_token(user.id))
 
 
+class DemoUserOut(BaseModel):
+    id: str
+    name: str
+    department: str | None = None
+    is_admin: bool
+
+
+@router.get("/demo-users", response_model=list[DemoUserOut])
+def get_demo_users(db: Session = Depends(get_db)):
+    """Returns only visible, active users for demo login chips (no emails or hashes)."""
+    users = (
+        db.query(User)
+        .filter(User.active == True, User.shown_in_demo == True)
+        .order_by(User.name)
+        .all()
+    )
+    return [
+        DemoUserOut(
+            id=u.id,
+            name=u.name,
+            department=u.department,
+            is_admin="admin" in (u.roles or []),
+        )
+        for u in users
+    ]
+
+
 @router.get("/me", response_model=MeResponse)
 def me(user: User = Depends(get_current_user)):
     return MeResponse(
@@ -94,3 +121,4 @@ def me(user: User = Depends(get_current_user)):
         department=user.department,
         external_id=user.external_id,
     )
+

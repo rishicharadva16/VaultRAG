@@ -1,0 +1,2120 @@
+{
+  "03497686-9481-5969-9d23-318bd305a08a": {
+    "chunk_id": "db:salaries#E1013:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1013",
+      "role:admin"
+    ]
+  },
+  "034ab492-018b-5860-90c0-4b9e5da82980": {
+    "chunk_id": "db:approvals#APR-1009:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1020",
+      "role:admin"
+    ]
+  },
+  "042a9a93-0e55-5085-9d05-adf003b91e2e": {
+    "chunk_id": "img:invoice_01_apex_apr.png#0",
+    "source_id": "img:invoice_01_apex_apr.png",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "06152d64-75e6-5069-aab3-42417832f49e": {
+    "chunk_id": "img:invoice_03_quickprint.png#0",
+    "source_id": "img:invoice_03_quickprint.png",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "070472c5-50d8-515c-b452-689799bfa9b0": {
+    "chunk_id": "db:employees#E1020:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1020",
+      "role:admin"
+    ]
+  },
+  "07121887-73da-52e8-a682-3b99589645ae": {
+    "chunk_id": "hr_policy-p2-c3",
+    "source_id": "pdf:hr_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "0adcf4c0-c623-58af-b8af-0748a4540e93": {
+    "chunk_id": "leave_policy-p2-c4",
+    "source_id": "pdf:leave_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "0ef68898-6970-56b8-8874-2540c1073f6a": {
+    "chunk_id": "hr_policy-p3-c1",
+    "source_id": "pdf:hr_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "109dbeb1-8f56-5ef9-ad76-21545088ee07": {
+    "chunk_id": "img:invoice_02_brightbyte.png#0",
+    "source_id": "img:invoice_02_brightbyte.png",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "1186f6ee-45f8-55ce-94f0-8fbdd92251ed": {
+    "chunk_id": "db:expenses#EXP-1004:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1024",
+      "role:admin"
+    ]
+  },
+  "12e1ffe8-4f1c-5823-887d-cdc78a85172d": {
+    "chunk_id": "travel_expense_policy-p2-c3",
+    "source_id": "pdf:travel_expense_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "13c756b8-0de6-593e-a6be-01f5e75b82be": {
+    "chunk_id": "db:approvals#APR-1032:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1023",
+      "role:admin"
+    ]
+  },
+  "150bd52b-3013-537f-accc-d9c39c85d31b": {
+    "chunk_id": "db:employees#E1014:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "179b33c2-0dd3-51c5-ba08-1eb99634dd0f": {
+    "chunk_id": "leave_policy-p3-c1",
+    "source_id": "pdf:leave_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "17a7c3ef-dda1-5bbc-ab24-955cccdb340d": {
+    "chunk_id": "db:approvals#APR-1031:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "187afef0-a47a-5065-8bbf-6e163d319edc": {
+    "chunk_id": "db:expenses#EXP-1006:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1019",
+      "role:admin"
+    ]
+  },
+  "18c0bd34-70f6-54b2-9a76-1887c4b7b1f0": {
+    "chunk_id": "db:expenses#EXP-1032:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1023",
+      "role:admin"
+    ]
+  },
+  "193d8a12-4eb2-5595-a088-666050076122": {
+    "chunk_id": "db:salaries#E1008:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1008",
+      "role:admin"
+    ]
+  },
+  "198b5577-ae87-5367-8bc3-1a3ddf71e697": {
+    "chunk_id": "db:expenses#EXP-1036:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "1b01c45d-a31d-59f9-b044-690b7aa6a2f7": {
+    "chunk_id": "db:salaries#E1011:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1011",
+      "role:admin"
+    ]
+  },
+  "1c54c117-3e4b-5197-b241-3e6c15c19268": {
+    "chunk_id": "finance_memo_q2_fy27-p2-c1",
+    "source_id": "pdf:finance_memo_q2_fy27.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "1fc68fae-9353-5b9e-a5e0-590aa8d2e171": {
+    "chunk_id": "db:salaries#E1006:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1006",
+      "role:admin"
+    ]
+  },
+  "20b82870-ace5-5ab5-95bf-a89d2f227a63": {
+    "chunk_id": "db:expenses#EXP-1033:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1021",
+      "role:admin"
+    ]
+  },
+  "21edd843-300a-5436-86a3-b70d88f6f83f": {
+    "chunk_id": "db:salaries#E1003:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "229c5536-e920-544c-9e20-c0f1ae37a78c": {
+    "chunk_id": "db:salaries#E1003:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "24785c93-b669-5f16-bd57-da22b6db6be6": {
+    "chunk_id": "db:salaries#E1014:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1014",
+      "role:admin"
+    ]
+  },
+  "24f1c1a3-74de-58e0-98e4-80ed0a91f433": {
+    "chunk_id": "db:salaries#E1023:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1023",
+      "role:admin"
+    ]
+  },
+  "2541a578-8262-535a-a56f-f1f22212da92": {
+    "chunk_id": "db:expenses#EXP-1001:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1024",
+      "role:admin"
+    ]
+  },
+  "278ed584-30aa-5cd9-92fb-100cacb69355": {
+    "chunk_id": "db:expenses#EXP-1019:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1023",
+      "role:admin"
+    ]
+  },
+  "2a0320ae-d294-5fff-9405-a579a8ba0e54": {
+    "chunk_id": "db:expenses#EXP-1018:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1012",
+      "role:admin"
+    ]
+  },
+  "2a6a45e8-7a5a-57b7-9e82-c93015f1b702": {
+    "chunk_id": "poison_01_vendor_onboarding_checklist-p1-c6",
+    "source_id": "poison:poison_01_vendor_onboarding_checklist.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "2bc62fc2-53ab-55d5-8ce4-29e2aec1f4da": {
+    "chunk_id": "db:salaries#E1013:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1013",
+      "role:admin"
+    ]
+  },
+  "2bf4da63-d200-501d-b51e-dcfb309abd9f": {
+    "chunk_id": "db:employees#E1012:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "2ecc3433-6db7-54aa-aed7-75c056294d64": {
+    "chunk_id": "db:salaries#E1012:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1012",
+      "role:admin"
+    ]
+  },
+  "31475685-7182-5ffc-8a00-1c872f4e22a7": {
+    "chunk_id": "db:salaries#E1004:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "31ec3235-8cb1-5d87-85cd-80506e0793c4": {
+    "chunk_id": "db:salaries#E1018:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1018",
+      "role:admin"
+    ]
+  },
+  "3226e19b-4d3f-5c3b-85e7-f93949457c9c": {
+    "chunk_id": "db:salaries#E1002:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1002",
+      "role:admin"
+    ]
+  },
+  "3383c9d4-c129-59b6-a086-6061282339aa": {
+    "chunk_id": "leave_policy-p2-c6",
+    "source_id": "pdf:leave_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "3478fcd3-aa7a-5c57-bc03-b218ede4f379": {
+    "chunk_id": "db:employees#E1005:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "356ae8c8-be79-51a3-8b12-6fa1ce7acef8": {
+    "chunk_id": "travel_expense_policy-p2-c1",
+    "source_id": "pdf:travel_expense_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "36ef31ac-98af-557a-ad0e-dd3ec77a826c": {
+    "chunk_id": "travel_expense_policy-p2-c2",
+    "source_id": "pdf:travel_expense_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "373ad0f8-45e2-55e9-b146-8474a6a830c6": {
+    "chunk_id": "db:employees#E1025:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "37dc5495-0bd0-5159-b432-8302aa8f7948": {
+    "chunk_id": "db:expenses#EXP-1008:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "3940c12f-18df-56e6-87d7-fc3589c85142": {
+    "chunk_id": "db:approvals#APR-1020:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "39b3d136-66c4-53fc-831b-bf24daed9de9": {
+    "chunk_id": "db:salaries#E1001:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1001",
+      "role:admin"
+    ]
+  },
+  "3a506870-2567-507a-a65d-9cf2aeaa1d37": {
+    "chunk_id": "db:approvals#APR-1024:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1007",
+      "role:admin"
+    ]
+  },
+  "3caddfc6-d049-5fbe-b306-26008a6e486b": {
+    "chunk_id": "db:salaries#E1017:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1017",
+      "role:admin"
+    ]
+  },
+  "3ced33a3-e1c2-5cb5-9b4f-fd6a02378548": {
+    "chunk_id": "hr_policy-p2-c1",
+    "source_id": "pdf:hr_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "3d1f269a-f91a-5010-8b9a-10c7d902c9ae": {
+    "chunk_id": "db:salaries#E1017:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1017",
+      "role:admin"
+    ]
+  },
+  "3d73e35f-a260-50aa-a6f0-560b0884ab2f": {
+    "chunk_id": "db:salaries#E1010:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "402dd19d-8ab4-5a2f-900e-ba12ee7356fd": {
+    "chunk_id": "db:expenses#EXP-1009:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1020",
+      "role:admin"
+    ]
+  },
+  "40a85a4e-6842-5b2e-9f5c-be3b10033677": {
+    "chunk_id": "db:employees#E1005:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1005",
+      "role:admin"
+    ]
+  },
+  "41165c41-8f12-5256-bc1e-3f81e7bae3f2": {
+    "chunk_id": "db:approvals#APR-1022:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1023",
+      "role:admin"
+    ]
+  },
+  "426d0dd2-c1f6-5826-9616-a631cb21234b": {
+    "chunk_id": "db:employees#E1009:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "42acc961-c5d3-5df7-9239-16b0ceb338cb": {
+    "chunk_id": "board_minutes_2026_08-p1-c1",
+    "source_id": "pdf:board_minutes_2026_08.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "dept:HR",
+      "role:admin"
+    ]
+  },
+  "43a563fb-705b-5730-a753-223472937622": {
+    "chunk_id": "db:employees#E1022:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1022",
+      "role:admin"
+    ]
+  },
+  "442af4a5-5252-56f9-9742-625e81cd2571": {
+    "chunk_id": "db:expenses#EXP-1035:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "44662e1e-1f1b-583e-9e96-2680f47d9385": {
+    "chunk_id": "db:employees#E1023:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1023",
+      "role:admin"
+    ]
+  },
+  "448c4157-d5ce-5dc5-9a1a-c43fdea553e6": {
+    "chunk_id": "db:expenses#EXP-1031:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "451e4b6f-33cd-56e1-be24-c974311693a1": {
+    "chunk_id": "db:approvals#APR-1021:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "4721057f-982f-523c-ad0c-8e890f6f490e": {
+    "chunk_id": "img:id_card_E1010.png#0",
+    "source_id": "img:id_card_E1010.png",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "4ad83343-ef02-59f1-8cc0-0ebe83e66d6b": {
+    "chunk_id": "db:approvals#APR-1029:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "4b86f8d2-de78-5b30-8a68-650989959521": {
+    "chunk_id": "db:approvals#APR-1005:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "4eaf974f-7fed-50b4-8d4a-005c33b5f009": {
+    "chunk_id": "db:salaries#E1011:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1011",
+      "role:admin"
+    ]
+  },
+  "4f370fde-11ea-5227-8b9e-96e291185405": {
+    "chunk_id": "db:approvals#APR-1033:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1021",
+      "role:admin"
+    ]
+  },
+  "50a8d8fc-49a8-5961-910e-b2624e36db10": {
+    "chunk_id": "poison_03_cafeteria_holiday_notice-p1-c1",
+    "source_id": "poison:poison_03_cafeteria_holiday_notice.html",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "50bad339-ab53-5667-b0f6-662e5a66d8de": {
+    "chunk_id": "leave_policy-p1-c1",
+    "source_id": "pdf:leave_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "516b461e-c2ec-52b6-acbf-8e631ce71119": {
+    "chunk_id": "db:employees#E1021:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "52cd55f0-055e-5c1a-aa01-0d3c1be3c0d0": {
+    "chunk_id": "db:employees#E1004:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "52defee0-f6aa-5021-9eb0-d42b4b7a4d28": {
+    "chunk_id": "db:salaries#E1007:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1007",
+      "role:admin"
+    ]
+  },
+  "52f338f6-5751-51de-b0cb-aa32a3623ac7": {
+    "chunk_id": "db:salaries#E1021:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1021",
+      "role:admin"
+    ]
+  },
+  "5356b6f9-5779-56a4-b38a-92ede05a50c3": {
+    "chunk_id": "board_minutes_2026_08-p1-c2",
+    "source_id": "pdf:board_minutes_2026_08.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "dept:HR",
+      "role:admin"
+    ]
+  },
+  "540fc5ce-a366-5e38-94c8-bd8807f105bb": {
+    "chunk_id": "board_minutes_2026_08-p1-c4",
+    "source_id": "pdf:board_minutes_2026_08.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "dept:HR",
+      "role:admin"
+    ]
+  },
+  "5457c646-742f-5e27-b24f-291397afe845": {
+    "chunk_id": "poison_01_vendor_onboarding_checklist-p1-c3",
+    "source_id": "poison:poison_01_vendor_onboarding_checklist.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "56779f69-3f60-5294-8584-b6c579bd9938": {
+    "chunk_id": "poison_01_vendor_onboarding_checklist-p1-c1",
+    "source_id": "poison:poison_01_vendor_onboarding_checklist.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "56b7b04e-705e-52b1-b5b2-13c5e86d90f3": {
+    "chunk_id": "db:expenses#EXP-1025:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1007",
+      "role:admin"
+    ]
+  },
+  "57257c27-5966-5a32-8e26-debea85b2726": {
+    "chunk_id": "db:expenses#EXP-1011:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1005",
+      "role:admin"
+    ]
+  },
+  "576633cd-e7d7-5778-bc74-11806f99fd9e": {
+    "chunk_id": "db:employees#E1019:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1019",
+      "role:admin"
+    ]
+  },
+  "576b60b6-a0aa-55c4-98a9-45236b678c29": {
+    "chunk_id": "db:salaries#E1001:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1001",
+      "role:admin"
+    ]
+  },
+  "57b15959-73db-5130-91dd-44004406b4b2": {
+    "chunk_id": "db:salaries#E1009:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "5be4ce8b-3fa0-5f4a-bfb5-4877298950d2": {
+    "chunk_id": "travel_expense_policy-p2-c5",
+    "source_id": "pdf:travel_expense_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "5e328b82-2a38-502d-8680-546ce335cdca": {
+    "chunk_id": "db:salaries#E1016:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1016",
+      "role:admin"
+    ]
+  },
+  "5e44b97d-bb9b-55a1-8a38-f00c4674c010": {
+    "chunk_id": "db:expenses#EXP-1015:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1022",
+      "role:admin"
+    ]
+  },
+  "5e85e654-feab-5bf8-890e-e860912415bd": {
+    "chunk_id": "finance_memo_q2_fy27-p1-c6",
+    "source_id": "pdf:finance_memo_q2_fy27.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "5e996c5d-0c76-5d32-a1cc-34fd1fb2c538": {
+    "chunk_id": "db:expenses#EXP-1020:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "5f012e99-2b90-5dd9-aa79-23239ec4afe4": {
+    "chunk_id": "db:approvals#APR-1019:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1023",
+      "role:admin"
+    ]
+  },
+  "605dfa3d-ee6f-5772-bff9-e977bc195447": {
+    "chunk_id": "db:employees#E1011:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "606c65a7-843f-5efb-9aa1-5af40b20e3b4": {
+    "chunk_id": "db:expenses#EXP-1023:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1014",
+      "role:admin"
+    ]
+  },
+  "613b9bf9-e108-5727-9174-93a691035b9e": {
+    "chunk_id": "db:employees#E1018:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1018",
+      "role:admin"
+    ]
+  },
+  "6270f1fd-1d36-55c6-8ba1-3c888fbad92d": {
+    "chunk_id": "vendor_contract_apex-p1-c1",
+    "source_id": "pdf:vendor_contract_apex.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "641aceb4-f2b8-5a43-9f3c-886b4226a596": {
+    "chunk_id": "poison_01_vendor_onboarding_checklist-p1-c4",
+    "source_id": "poison:poison_01_vendor_onboarding_checklist.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "648173bf-9e4c-5fd1-a627-8d322a485996": {
+    "chunk_id": "poison_01_vendor_onboarding_checklist-p1-c5",
+    "source_id": "poison:poison_01_vendor_onboarding_checklist.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "6563dd40-b7c0-54bd-94e5-c33ce85e87d1": {
+    "chunk_id": "db:salaries#E1021:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1021",
+      "role:admin"
+    ]
+  },
+  "657debf3-86a9-52b9-b401-7771cf0b43ef": {
+    "chunk_id": "db:approvals#APR-1039:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "6669d245-5e29-5262-9945-0ba29ff35c8d": {
+    "chunk_id": "db:approvals#APR-1018:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1012",
+      "role:admin"
+    ]
+  },
+  "6718f7d5-6850-58dc-96c1-8b507adf12f0": {
+    "chunk_id": "db:employees#E1013:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "67199c20-d865-51dc-a8c8-03e9bc3494ff": {
+    "chunk_id": "db:approvals#APR-1017:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1025",
+      "role:admin"
+    ]
+  },
+  "68883361-a581-533b-8fbd-f52980fa92cb": {
+    "chunk_id": "db:employees#E1008:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "68f8650e-db80-5a11-918d-4f05f0e78d26": {
+    "chunk_id": "db:employees#E1024:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1024",
+      "role:admin"
+    ]
+  },
+  "6ad3850a-7165-5097-8c46-86dcdf42cdc9": {
+    "chunk_id": "db:approvals#APR-1001:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1024",
+      "role:admin"
+    ]
+  },
+  "6bf354a4-83e1-5a4a-83ce-20fecc278edc": {
+    "chunk_id": "db:approvals#APR-1035:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "6dbc4c0a-dbab-5f75-92f9-0c47e61ab27e": {
+    "chunk_id": "db:employees#E1017:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1017",
+      "role:admin"
+    ]
+  },
+  "6e2e9eba-d72e-57e0-a7c0-ae3734a711dc": {
+    "chunk_id": "vendor_contract_apex-p3-c4",
+    "source_id": "pdf:vendor_contract_apex.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "6fc6acf4-787d-592f-a3ad-415b887c4272": {
+    "chunk_id": "db:approvals#APR-1038:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "6fcd7d07-ca46-5d15-a265-acd313f044c8": {
+    "chunk_id": "db:expenses#EXP-1005:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "707aa7ce-22f1-527c-b570-f5aa55e75a0b": {
+    "chunk_id": "db:salaries#E1025:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1025",
+      "role:admin"
+    ]
+  },
+  "72807fe5-6807-575c-aa39-ae25d3d70175": {
+    "chunk_id": "travel_expense_policy-p2-c6",
+    "source_id": "pdf:travel_expense_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "732717b2-bc9a-5143-99ae-6a9a485258c1": {
+    "chunk_id": "db:employees#E1004:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "743e8bbc-4182-5e5f-8d1c-f9707ed72de6": {
+    "chunk_id": "db:salaries#E1022:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1022",
+      "role:admin"
+    ]
+  },
+  "75d63961-4c7b-555c-93ee-4c43b9b4ae88": {
+    "chunk_id": "db:salaries#E1015:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1015",
+      "role:admin"
+    ]
+  },
+  "770b6087-4b59-5dcf-bdaa-23e12f82c177": {
+    "chunk_id": "img:id_card_E1004.png#0",
+    "source_id": "img:id_card_E1004.png",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "7733a512-e5d7-5a80-b7c5-5ebc75428014": {
+    "chunk_id": "db:approvals#APR-1026:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1017",
+      "role:admin"
+    ]
+  },
+  "77c235b0-fa23-5323-aeec-dcd605daf479": {
+    "chunk_id": "db:expenses#EXP-1021:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "79c88ffa-effb-52ff-8945-f0ca242477d4": {
+    "chunk_id": "db:approvals#APR-1034:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "7a16b34e-d5f8-5b7f-8fa3-82e4203aa104": {
+    "chunk_id": "db:approvals#APR-1025:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1007",
+      "role:admin"
+    ]
+  },
+  "7aac97db-c2ae-599e-9e46-9eee7a6cc813": {
+    "chunk_id": "db:salaries#E1008:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1008",
+      "role:admin"
+    ]
+  },
+  "7ba31e73-4a6d-5f28-a80f-a936ff274714": {
+    "chunk_id": "db:expenses#EXP-1040:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1008",
+      "role:admin"
+    ]
+  },
+  "7c2486b9-6617-5bfb-910c-ca15d40feffc": {
+    "chunk_id": "db:approvals#APR-1012:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1017",
+      "role:admin"
+    ]
+  },
+  "7c49de28-d784-553f-84b9-8eacba589f90": {
+    "chunk_id": "leave_policy-p2-c2",
+    "source_id": "pdf:leave_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "7c5d26b3-f408-5286-80d4-2a7afc27cdeb": {
+    "chunk_id": "db:expenses#EXP-1002:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "7c645328-2782-594b-929c-90a167007879": {
+    "chunk_id": "db:expenses#EXP-1003:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "7c8425b6-bcb0-501c-a702-42490d68d177": {
+    "chunk_id": "db:approvals#APR-1007:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1019",
+      "role:admin"
+    ]
+  },
+  "7ce85d69-833f-57d8-8627-f75dad8e98d6": {
+    "chunk_id": "db:employees#E1001:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1001",
+      "role:admin"
+    ]
+  },
+  "7d99d02b-3b5b-5538-b1aa-f3b66a508546": {
+    "chunk_id": "hr_policy-p2-c4",
+    "source_id": "pdf:hr_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "7dc18f77-b24c-51d7-a236-409094808bca": {
+    "chunk_id": "db:salaries#E1006:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1006",
+      "role:admin"
+    ]
+  },
+  "7e3db29c-2e51-5d02-a124-f40488079118": {
+    "chunk_id": "db:employees#E1022:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "7ebe7291-4230-5108-a56d-ff7e53a9f2a2": {
+    "chunk_id": "db:employees#E1007:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1007",
+      "role:admin"
+    ]
+  },
+  "7f381e5f-7692-50da-a14c-f744693eb361": {
+    "chunk_id": "img:invoice_04_apex_may_blurry.jpg#0",
+    "source_id": "img:invoice_04_apex_may_blurry.jpg",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "835cee0a-78cd-5b53-8bb5-a6e86ed9975e": {
+    "chunk_id": "db:employees#E1021:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1021",
+      "role:admin"
+    ]
+  },
+  "8455c0e6-ce18-5ad6-bc10-efd7e9bdc129": {
+    "chunk_id": "db:approvals#APR-1040:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1008",
+      "role:admin"
+    ]
+  },
+  "86cd55c5-264b-500d-ae8f-840cdaddf2ac": {
+    "chunk_id": "db:approvals#APR-1011:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1005",
+      "role:admin"
+    ]
+  },
+  "88539d8e-602d-537e-8e7b-9407144ebea1": {
+    "chunk_id": "db:employees#E1007:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "886443e1-886a-5f60-841e-2488dc02d8ac": {
+    "chunk_id": "db:expenses#EXP-1010:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1025",
+      "role:admin"
+    ]
+  },
+  "88ac04d3-5f9f-5798-b362-68d05e69b947": {
+    "chunk_id": "hr_policy-p2-c2",
+    "source_id": "pdf:hr_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "8a906c57-8726-5a1d-8fe5-6bdda58ea1ca": {
+    "chunk_id": "db:employees#E1006:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1006",
+      "role:admin"
+    ]
+  },
+  "8ad9504b-a3d8-513e-bf40-a2f7d89a3891": {
+    "chunk_id": "db:employees#E1009:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "8b398d0c-e4ae-5d48-8b59-a88f5f594f06": {
+    "chunk_id": "db:salaries#E1020:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1020",
+      "role:admin"
+    ]
+  },
+  "8ba0e8b4-23d1-5027-9d03-bf42694c6972": {
+    "chunk_id": "travel_expense_policy-p3-c1",
+    "source_id": "pdf:travel_expense_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "8bca4c3e-33fd-562d-bce2-ea6d05313b34": {
+    "chunk_id": "db:salaries#E1014:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1014",
+      "role:admin"
+    ]
+  },
+  "8dcd8b06-ae60-5d3b-acba-11ba7674a2d3": {
+    "chunk_id": "img:invoice_05_rotated_scan.jpg#0",
+    "source_id": "img:invoice_05_rotated_scan.jpg",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "8e0669eb-2307-5314-9419-8054e063d93a": {
+    "chunk_id": "db:salaries#E1015:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1015",
+      "role:admin"
+    ]
+  },
+  "8e076c35-fdce-5f8e-b7f4-ae69ebb73a98": {
+    "chunk_id": "db:employees#E1016:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "8e40eea7-1179-5f1c-9653-a28975464b6e": {
+    "chunk_id": "db:expenses#EXP-1013:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1006",
+      "role:admin"
+    ]
+  },
+  "8fef51fa-6728-57f8-8618-055b09b84d7c": {
+    "chunk_id": "leave_policy-p2-c5",
+    "source_id": "pdf:leave_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "908c9cd3-c597-5a28-98b4-88c4ab6782e4": {
+    "chunk_id": "db:expenses#EXP-1022:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1023",
+      "role:admin"
+    ]
+  },
+  "920b8bcd-4807-57d5-8ebd-9e56bedfd73e": {
+    "chunk_id": "db:employees#E1008:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1008",
+      "role:admin"
+    ]
+  },
+  "92f8bafb-d724-56f8-8e8f-ad792b8fcc31": {
+    "chunk_id": "db:salaries#E1018:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1018",
+      "role:admin"
+    ]
+  },
+  "9342f5bd-57aa-53eb-9c71-dbdf92f01844": {
+    "chunk_id": "db:employees#E1011:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1011",
+      "role:admin"
+    ]
+  },
+  "93b8a56b-6ee7-51b4-9cdf-e39d4af7ce83": {
+    "chunk_id": "db:approvals#APR-1027:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "941dde4f-b247-58f5-890b-2a0f885445c3": {
+    "chunk_id": "db:expenses#EXP-1026:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1017",
+      "role:admin"
+    ]
+  },
+  "9691f571-5b8a-509c-8bb6-61adcad93de6": {
+    "chunk_id": "db:salaries#E1022:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1022",
+      "role:admin"
+    ]
+  },
+  "98daed47-1cbf-59d3-bcc5-91f6deb77088": {
+    "chunk_id": "db:employees#E1014:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1014",
+      "role:admin"
+    ]
+  },
+  "9a74cecf-02cc-5683-81de-9e9e075b0b74": {
+    "chunk_id": "db:salaries#E1005:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1005",
+      "role:admin"
+    ]
+  },
+  "9cc5968d-24b3-533f-8f71-d2240162fec3": {
+    "chunk_id": "board_minutes_2026_08-p1-c5",
+    "source_id": "pdf:board_minutes_2026_08.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "dept:HR",
+      "role:admin"
+    ]
+  },
+  "9dbeb435-c5a6-5645-800d-9d05d5589af3": {
+    "chunk_id": "db:approvals#APR-1010:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1025",
+      "role:admin"
+    ]
+  },
+  "9ee09357-efc9-561c-9466-e55f6582f02a": {
+    "chunk_id": "db:approvals#APR-1023:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1014",
+      "role:admin"
+    ]
+  },
+  "9f7d8a4b-1d06-58ae-891b-45ec5ad1b4f5": {
+    "chunk_id": "finance_memo_q2_fy27-p1-c1",
+    "source_id": "pdf:finance_memo_q2_fy27.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "9fe2393d-028c-5f30-8eef-e1faeecff176": {
+    "chunk_id": "db:approvals#APR-1015:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1022",
+      "role:admin"
+    ]
+  },
+  "a0ff45b0-64db-5c36-8264-89aedc51b779": {
+    "chunk_id": "db:approvals#APR-1028:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "a1acae6f-87ad-53fa-ae03-711d28aa89cc": {
+    "chunk_id": "db:expenses#EXP-1027:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "a1ce4f3a-082d-52a8-ac01-3c415673c679": {
+    "chunk_id": "db:salaries#E1004:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "a23eb165-760d-5c86-84d8-b3ecafa76697": {
+    "chunk_id": "finance_memo_q2_fy27-p1-c7",
+    "source_id": "pdf:finance_memo_q2_fy27.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "a3dccf78-96d1-5ee8-8f09-3998956791fc": {
+    "chunk_id": "db:expenses#EXP-1029:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "a484ce26-0758-5c34-8104-99103640d7ba": {
+    "chunk_id": "db:approvals#APR-1002:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "a6f41dc9-51f2-5a34-99f6-1301a1b4b0e6": {
+    "chunk_id": "db:salaries#E1019:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1019",
+      "role:admin"
+    ]
+  },
+  "a7d24dd4-f3b9-54d0-b69a-ffbb8039cb8c": {
+    "chunk_id": "db:salaries#E1023:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1023",
+      "role:admin"
+    ]
+  },
+  "a7d7395c-a03f-5ce6-9c3b-e76c36a854a9": {
+    "chunk_id": "db:salaries#E1002:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1002",
+      "role:admin"
+    ]
+  },
+  "a7e4b463-c5f4-5c3d-b692-d930b8be9e6c": {
+    "chunk_id": "db:expenses#EXP-1024:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1007",
+      "role:admin"
+    ]
+  },
+  "a7ed474f-f30b-5bf0-b84f-d5043f89c2cd": {
+    "chunk_id": "db:salaries#E1019:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1019",
+      "role:admin"
+    ]
+  },
+  "a805fc8d-77a4-5bdc-87ce-be57d3a03a46": {
+    "chunk_id": "db:approvals#APR-1013:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1006",
+      "role:admin"
+    ]
+  },
+  "aabb68e5-1df9-59d5-8f09-aa96c599e3bf": {
+    "chunk_id": "db:salaries#E1009:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "acdc42cd-33b6-57a1-9b5c-6f0c5f1c1fd3": {
+    "chunk_id": "db:expenses#EXP-1012:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1017",
+      "role:admin"
+    ]
+  },
+  "aeaf51d5-5ad0-511f-9bb8-2750359045b4": {
+    "chunk_id": "db:expenses#EXP-1039:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "af51d199-78c2-5e82-873f-73d89d6f0e8c": {
+    "chunk_id": "db:expenses#EXP-1016:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "b0c50e98-7262-5a53-9ca3-f7eee7534b59": {
+    "chunk_id": "db:employees#E1003:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "b3980aca-e170-50d9-959b-98d2f0c48d25": {
+    "chunk_id": "db:employees#E1020:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "b5340fd9-469c-5c63-a62f-e9c1976e6d12": {
+    "chunk_id": "poison_02_helpdesk_faq-p1-c1",
+    "source_id": "poison:poison_02_helpdesk_faq.md",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "b5d16985-d3e3-50b0-b930-19bb5f4c8bcd": {
+    "chunk_id": "db:expenses#EXP-1037:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1015",
+      "role:admin"
+    ]
+  },
+  "b5f6ec4c-d0aa-5b5d-b791-1b4e06fa102f": {
+    "chunk_id": "db:expenses#EXP-1007:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1019",
+      "role:admin"
+    ]
+  },
+  "b6c791d8-e77e-5009-a7b0-11bf44dea533": {
+    "chunk_id": "it_security_policy-p2-c1",
+    "source_id": "pdf:it_security_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "b8eabc0f-b78c-51a6-bea7-7316cfa908b3": {
+    "chunk_id": "db:employees#E1012:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1012",
+      "role:admin"
+    ]
+  },
+  "b8f0640d-c81a-5562-941b-9596e054a8db": {
+    "chunk_id": "img:receipt_hotel_lotus.png#0",
+    "source_id": "img:receipt_hotel_lotus.png",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "b9ea6ba3-b3fb-5605-a467-11b487825c7d": {
+    "chunk_id": "db:salaries#E1012:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1012",
+      "role:admin"
+    ]
+  },
+  "ba8f753e-62b3-5874-927a-e68ce5094df1": {
+    "chunk_id": "db:employees#E1017:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "bc0b5be3-0979-5bff-b29f-20394a0a7917": {
+    "chunk_id": "db:employees#E1015:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "bc3bf832-5be5-5353-8c0a-391162bf061b": {
+    "chunk_id": "db:expenses#EXP-1017:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1025",
+      "role:admin"
+    ]
+  },
+  "be16ad16-e65f-55d8-bafd-7ecf69b80052": {
+    "chunk_id": "db:salaries#E1005:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1005",
+      "role:admin"
+    ]
+  },
+  "bec8d763-378f-5baa-873c-f73ae4625287": {
+    "chunk_id": "db:expenses#EXP-1028:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "bf16fedf-6b05-5252-bf57-f3d839e28536": {
+    "chunk_id": "vendor_contract_apex-p3-c1",
+    "source_id": "pdf:vendor_contract_apex.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "bf7c97e9-a698-5b39-84ab-34aac986a636": {
+    "chunk_id": "db:employees#E1023:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "c021680a-44ad-5e4a-9837-d53ce0de1ef9": {
+    "chunk_id": "db:salaries#E1007:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1007",
+      "role:admin"
+    ]
+  },
+  "c2423d8d-e9f4-53cf-aaee-6f32aca7f68c": {
+    "chunk_id": "board_minutes_2026_08-p3-c1",
+    "source_id": "pdf:board_minutes_2026_08.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "dept:HR",
+      "role:admin"
+    ]
+  },
+  "c2dc8846-767e-562d-a3b8-bb000bf00398": {
+    "chunk_id": "db:employees#E1002:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "c3ef222f-3ec1-5545-b8b4-2579119308c9": {
+    "chunk_id": "db:employees#E1003:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "c8fbea19-ddd9-5191-a38b-dd076c574c64": {
+    "chunk_id": "finance_memo_q2_fy27-p1-c4",
+    "source_id": "pdf:finance_memo_q2_fy27.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "caf92506-f3da-5a4a-a411-1b86d5d45cf1": {
+    "chunk_id": "db:approvals#APR-1008:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "cc8cde36-9c24-5651-b845-2a36b37cce6a": {
+    "chunk_id": "db:salaries#E1025:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1025",
+      "role:admin"
+    ]
+  },
+  "cd5341d3-2dbd-5044-9c8f-963b27569533": {
+    "chunk_id": "db:approvals#APR-1030:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1018",
+      "role:admin"
+    ]
+  },
+  "ce60ef68-24f0-5527-9494-01af33a71a53": {
+    "chunk_id": "db:approvals#APR-1014:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "ce6555f5-921f-591a-81ee-287f18ac77ea": {
+    "chunk_id": "db:approvals#APR-1006:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1019",
+      "role:admin"
+    ]
+  },
+  "cf748dd5-690e-50d9-b1eb-7bf0a685a5f5": {
+    "chunk_id": "it_security_policy-p1-c1",
+    "source_id": "pdf:it_security_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "cf9dfe16-cd89-5450-84ed-dc1892da0890": {
+    "chunk_id": "db:employees#E1019:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "cfdd03da-2808-5bac-ba74-3aee5b8831c9": {
+    "chunk_id": "finance_memo_q2_fy27-p1-c2",
+    "source_id": "pdf:finance_memo_q2_fy27.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "d2433a87-263a-53d1-bd58-d0c48cb720ce": {
+    "chunk_id": "db:salaries#E1020:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1020",
+      "role:admin"
+    ]
+  },
+  "d3a65ee3-6927-5a62-8528-8a20b4630571": {
+    "chunk_id": "db:approvals#APR-1037:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1015",
+      "role:admin"
+    ]
+  },
+  "d52197f6-dabf-55f8-af3b-e157e03fcea3": {
+    "chunk_id": "db:approvals#APR-1003:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "d52ef984-9bbb-5721-a7d1-4f366a6a7603": {
+    "chunk_id": "db:salaries#E1016:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1016",
+      "role:admin"
+    ]
+  },
+  "d6463a38-308d-5243-abe9-2b80e9bb4c7f": {
+    "chunk_id": "board_minutes_2026_08-p2-c1",
+    "source_id": "pdf:board_minutes_2026_08.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "dept:HR",
+      "role:admin"
+    ]
+  },
+  "d7fe75f6-bf34-5f46-9048-d93bf7c0f624": {
+    "chunk_id": "hr_policy-p1-c1",
+    "source_id": "pdf:hr_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "d93ce279-925a-5c4f-b153-a4741ed3af39": {
+    "chunk_id": "img:purchase_order_PO-2026-077.png#0",
+    "source_id": "img:purchase_order_PO-2026-077.png",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "d9444801-3323-5b10-b3a4-f179baefd5db": {
+    "chunk_id": "vendor_contract_apex-p4-c1",
+    "source_id": "pdf:vendor_contract_apex.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "da4faf05-698a-538f-ab61-f69890b562ae": {
+    "chunk_id": "db:employees#E1010:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "dd28f9e9-14ba-5390-8f03-73f621667c0a": {
+    "chunk_id": "db:employees#E1006:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "df8bfe0e-e150-585d-960f-af2ceb8c260c": {
+    "chunk_id": "db:expenses#EXP-1030:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1018",
+      "role:admin"
+    ]
+  },
+  "e02050de-fb30-56a9-9779-180529b0c5c0": {
+    "chunk_id": "db:salaries#E1010:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "e0c06185-8d80-5dfc-9f5b-e8a6e345e288": {
+    "chunk_id": "finance_memo_q2_fy27-p1-c5",
+    "source_id": "pdf:finance_memo_q2_fy27.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "e23ed7f5-c5ac-5611-a8a5-0eed083b4e23": {
+    "chunk_id": "vendor_contract_apex-p3-c2",
+    "source_id": "pdf:vendor_contract_apex.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "e6500a53-00be-54a7-bf0e-27f71b9793bb": {
+    "chunk_id": "db:employees#E1002:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1002",
+      "role:admin"
+    ]
+  },
+  "e6859ebc-df46-5b1c-b673-a8be8b642321": {
+    "chunk_id": "db:approvals#APR-1036:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1003",
+      "role:admin"
+    ]
+  },
+  "e7be96be-3af4-563f-acf8-56b3b8a18136": {
+    "chunk_id": "vendor_contract_apex-p3-c3",
+    "source_id": "pdf:vendor_contract_apex.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "e84283b7-58a5-5708-b27f-5b1a25f6975b": {
+    "chunk_id": "db:salaries#E1024:base",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1024",
+      "role:admin"
+    ]
+  },
+  "e8a9acf0-8868-5965-b2d1-61390f8be12a": {
+    "chunk_id": "db:expenses#EXP-1014:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1004",
+      "role:admin"
+    ]
+  },
+  "e8e5965a-2a40-5f94-b05f-7b7a68499951": {
+    "chunk_id": "leave_policy-p2-c3",
+    "source_id": "pdf:leave_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "e8ebe81c-2992-525f-8826-0dcf6d1fe957": {
+    "chunk_id": "db:employees#E1018:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "e979772f-7c45-5bda-85c9-4309e1590c7e": {
+    "chunk_id": "db:employees#E1001:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "ea51068a-1e72-533e-ae97-866a4e8b7025": {
+    "chunk_id": "db:employees#E1024:base",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "ec0b5595-f875-550d-be82-eb720d27ff33": {
+    "chunk_id": "db:salaries#E1024:sensitive",
+    "source_id": "db:salaries",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1024",
+      "role:admin"
+    ]
+  },
+  "eecfeb50-9a4d-5b53-ad99-a6d38eda1d10": {
+    "chunk_id": "travel_expense_policy-p1-c1",
+    "source_id": "pdf:travel_expense_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "ef4a35b1-cb56-5840-ae10-71f3e0e20f11": {
+    "chunk_id": "poison_01_vendor_onboarding_checklist-p1-c2",
+    "source_id": "poison:poison_01_vendor_onboarding_checklist.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "f01db155-0ed3-5cb6-863d-9c75a43d7dd0": {
+    "chunk_id": "db:expenses#EXP-1034:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "f05857e7-1d61-568c-8634-2cd720a3e129": {
+    "chunk_id": "db:employees#E1013:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1013",
+      "role:admin"
+    ]
+  },
+  "f07c0fee-7e1e-50d4-93d1-04058a3a799c": {
+    "chunk_id": "leave_policy-p2-c1",
+    "source_id": "pdf:leave_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "f17122d8-770b-5ad1-a5c2-d214005b8cb0": {
+    "chunk_id": "img:whiteboard_sprint.jpg#0",
+    "source_id": "img:whiteboard_sprint.jpg",
+    "acl_tokens": [
+      "dept:Engineering",
+      "dept:HR",
+      "role:admin"
+    ]
+  },
+  "f18fba3a-90bc-5e26-9266-2368a158b2cf": {
+    "chunk_id": "db:employees#E1015:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1015",
+      "role:admin"
+    ]
+  },
+  "f1fd3d39-01b3-558b-9e17-430c29ed398a": {
+    "chunk_id": "db:employees#E1016:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1016",
+      "role:admin"
+    ]
+  },
+  "f20aa95d-e833-5c8a-93c8-95c5c56eea89": {
+    "chunk_id": "db:employees#E1025:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1025",
+      "role:admin"
+    ]
+  },
+  "f30a16ad-54e8-59ea-9d77-53d08ddc0490": {
+    "chunk_id": "travel_expense_policy-p2-c4",
+    "source_id": "pdf:travel_expense_policy.pdf",
+    "acl_tokens": [
+      "org:northwind",
+      "role:admin"
+    ]
+  },
+  "f57d9d0e-f937-5cc0-9033-290f4a703627": {
+    "chunk_id": "db:expenses#EXP-1038:base",
+    "source_id": "db:expenses",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "f7db631a-0379-5aa4-b73b-09202b8e54d9": {
+    "chunk_id": "board_minutes_2026_08-p1-c3",
+    "source_id": "pdf:board_minutes_2026_08.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "dept:HR",
+      "role:admin"
+    ]
+  },
+  "f8e8e259-c4ea-56e9-9ede-310780c40e03": {
+    "chunk_id": "db:approvals#APR-1016:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1009",
+      "role:admin"
+    ]
+  },
+  "f915392c-e206-5143-952b-5723f599c367": {
+    "chunk_id": "vendor_contract_apex-p2-c1",
+    "source_id": "pdf:vendor_contract_apex.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  },
+  "fdf209c6-98a8-5eab-96b8-5af3086abb90": {
+    "chunk_id": "db:employees#E1010:sensitive",
+    "source_id": "db:employees",
+    "acl_tokens": [
+      "dept:HR",
+      "emp:E1010",
+      "role:admin"
+    ]
+  },
+  "fe6da3f6-91cd-5227-8b87-ac388504b3be": {
+    "chunk_id": "db:approvals#APR-1004:base",
+    "source_id": "db:approvals",
+    "acl_tokens": [
+      "dept:Finance",
+      "emp:E1024",
+      "role:admin"
+    ]
+  },
+  "fef659e2-8b64-5778-8c2c-28f981645b2b": {
+    "chunk_id": "finance_memo_q2_fy27-p1-c3",
+    "source_id": "pdf:finance_memo_q2_fy27.pdf",
+    "acl_tokens": [
+      "dept:Finance",
+      "role:admin"
+    ]
+  }
+}

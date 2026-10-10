@@ -17,9 +17,17 @@ from httpx import ASGITransport, AsyncClient
 
 from app.index.schema import Chunk
 from app.index.store import SecureStore
+from app.config import settings
 from app.ingestion.db_ingestion import ingest_database, load_db_chunks
 from app.main import app
 from app.security.principals import build_principal
+
+pytestmark = pytest.mark.dataset_model
+
+
+@pytest.fixture(autouse=True)
+def force_dataset_model(monkeypatch):
+    monkeypatch.setattr(settings, "ACCESS_MODEL", "dataset")
 
 
 @pytest.fixture
@@ -32,7 +40,7 @@ def test_every_db_chunk_has_nonempty_acl_tokens():
     chunks = load_db_chunks()
     assert len(chunks) == 180
 
-    valid_prefixes = ("role:", "emp:", "dept:", "rolemp:", "usr:")
+    valid_prefixes = ("role:", "emp:", "dept:", "rolemp:", "usr:", "org:")
     for chunk in chunks:
         assert len(chunk.acl_tokens) > 0, f"Chunk {chunk.chunk_id} has empty acl_tokens"
         for tok in chunk.acl_tokens:

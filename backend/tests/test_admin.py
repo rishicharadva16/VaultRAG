@@ -18,13 +18,13 @@ async def _non_admin_token(client):
 
 
 @pytest.mark.asyncio
-async def test_non_admin_gets_403(client):
+async def test_non_admin_gets_404(client):
     token = await _non_admin_token(client)
     h = auth_header(token)
-    assert (await client.get("/admin/users", headers=h)).status_code == 403
+    assert (await client.get("/admin/users", headers=h)).status_code == 404
     assert (await client.post("/admin/users", headers=h, json={
-        "name": "X", "email": "x@northwind.example", "password": "password1", "roles": []
-    })).status_code == 403
+        "name": "X", "email": "x@northwind.example", "password": "password1", "department": "HR", "roles": []
+    })).status_code == 404
 
 
 @pytest.mark.asyncio

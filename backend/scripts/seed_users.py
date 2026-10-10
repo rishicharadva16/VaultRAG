@@ -81,14 +81,19 @@ def seed():
 
         # 2. Seed / update Northwind users
         seeded_users = []
+        visible_set = set(x.strip() for x in settings.DEMO_VISIBLE_USERS.split(",") if x.strip())
+
         for u in user_roles_data["users"]:
             uid = u["user_id"]
             emp_id = u["employee_id"]
-            role = u["role"]
             emp_meta = employees.get(emp_id, {})
             name = emp_meta.get("name", uid)
             email = emp_meta.get("email", f"{uid}@northwind.example")
             dept = emp_meta.get("department")
+            is_visible = (email in visible_set) or (uid in visible_set)
+
+            # Step 5e: Exactly one admin; everyone else is role employee with a department
+            assigned_roles = ["employee"]
 
             user = db.query(User).filter(
                 (User.external_id == uid) | (User.email == email)
@@ -97,31 +102,35 @@ def seed():
             if user:
                 user.name = name
                 user.email = email
-                user.roles = [role]
+                user.roles = assigned_roles
                 user.employee_id = emp_id
                 user.department = dept
                 user.external_id = uid
                 user.password_hash = pw_hash
                 user.active = True
-                print(f"  * Updated dataset user: {uid} ({email})")
+                user.shown_in_demo = is_visible
+                print(f"  * Updated dataset user: {uid} ({email}) [visible={is_visible}]")
             else:
                 user = User(
                     name=name,
                     email=email,
                     password_hash=pw_hash,
-                    roles=[role],
+                    roles=assigned_roles,
                     employee_id=emp_id,
                     department=dept,
                     external_id=uid,
                     active=True,
+                    shown_in_demo=is_visible,
                 )
                 db.add(user)
-                print(f"  + Created dataset user: {uid} ({email})")
+                print(f"  + Created dataset user: {uid} ({email}) [visible={is_visible}]")
             seeded_users.append(uid)
 
         # 3. Seed / update platform admin
         admin_email = "admin@northwind.example"
         admin_ext = "u_admin"
+        admin_visible = (admin_email in visible_set) or (admin_ext in visible_set)
+
         admin_user = db.query(User).filter(
             (User.external_id == admin_ext) | (User.email == admin_email)
         ).first()
@@ -135,6 +144,7 @@ def seed():
             admin_user.external_id = admin_ext
             admin_user.password_hash = pw_hash
             admin_user.active = True
+            admin_user.shown_in_demo = admin_visible
             print(f"  * Updated admin user: {admin_ext} ({admin_email})")
         else:
             admin_user = User(
@@ -146,6 +156,7 @@ def seed():
                 department=None,
                 external_id=admin_ext,
                 active=True,
+                shown_in_demo=admin_visible,
             )
             db.add(admin_user)
             print(f"  + Created admin user: {admin_ext} ({admin_email})")

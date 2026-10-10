@@ -27,6 +27,13 @@ ref_acl = importlib.util.module_from_spec(spec)
 sys.modules["ref_acl"] = ref_acl
 spec.loader.exec_module(ref_acl)
 
+pytestmark = pytest.mark.dataset_model
+
+
+@pytest.fixture(autouse=True)
+def force_dataset_model(monkeypatch):
+    monkeypatch.setattr(settings, "ACCESS_MODEL", "dataset")
+
 
 DATASET_USERS = [
     {"user_id": "u_asha",  "name": "Asha Patel",   "roles": ["employee"],      "employee_id": "E1004", "department": "Engineering"},

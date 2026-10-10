@@ -8,6 +8,8 @@
 // 6. Ask Apex monthly fee as u_asha -> verify refusal (refused: true, citations empty)
 // 7. Fetch nonexistent citation -> verify 404 response
 
+import { execSync } from 'child_process';
+
 const BASE_URL = process.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 async function run() {
@@ -159,8 +161,271 @@ async function run() {
     throw new Error(`Expected status 404 for nonexistent citation, got ${notFoundRes.status}`);
   }
 
+  // ── Step 6 & Frontend Part 2: Document Lifecycle & Sharing ──
+
+  console.log('\n--- 8. Asha Uploads Generated PDF ---');
+  const salt = Date.now().toString(36);
+  const pythonCmd = `d:\\VaultRAG\\.venv\\Scripts\\python.exe -c "import pymupdf; doc = pymupdf.open(); p = doc.new_page(); p.insert_text((50, 72), 'Project Falcon secret budget is 450,000 USD for code ${salt}.'); print(doc.tobytes().hex())"`;
+  const pdfHex = execSync(pythonCmd).toString().trim();
+  const pdfBuffer = Buffer.from(pdfHex, 'hex');
+
+  const uploadForm = new FormData();
+  const pdfBlob = new Blob([pdfBuffer], { type: 'application/pdf' });
+  uploadForm.append('file', pdfBlob, `falcon_budget_${salt}.pdf`);
+
+  const uploadRes = await fetch(`${BASE_URL}/documents`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${ashaToken}` },
+    body: uploadForm
+  });
+
+  if (uploadRes.status !== 202 && uploadRes.status !== 200) {
+    throw new Error(`Upload failed with status ${uploadRes.status}: ${await uploadRes.text()}`);
+  }
+  const uploadData = await uploadRes.json();
+  const docId = uploadData.id;
+  console.log(`Document uploaded with id: ${docId}, initial status: ${uploadData.status}`);
+
+  // Wait for processing to complete (ready)
+  console.log('Waiting for document to reach ready state...');
+  let isReady = false;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const checkRes = await fetch(`${BASE_URL}/documents/${docId}`, {
+      headers: { 'Authorization': `Bearer ${ashaToken}` }
+    });
+    if (checkRes.ok) {
+      const docDetail = await checkRes.json();
+      if (docDetail.status === 'ready') {
+        isReady = true;
+        console.log(`Document reached ready state in ${attempt * 500}ms!`);
+        break;
+      }
+      if (docDetail.status === 'failed') {
+        throw new Error(`Document ingestion failed with reason: ${docDetail.reason_code}`);
+      }
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  if (!isReady) {
+    throw new Error(`Document ${docId} timed out waiting for ready state.`);
+  }
+
+  // 9. Asha asks about the document
+  console.log('\n--- 9. Asha Asks About Uploaded Document ---');
+  const falconQuestion = `What is the secret budget for Project Falcon code ${salt}?`;
+  const ashaDocAskRes = await fetch(`${BASE_URL}/ask`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${ashaToken}`
+    },
+    body: JSON.stringify({
+      question: falconQuestion,
+      source_ids: [docId]
+    })
+  });
+  if (!ashaDocAskRes.ok) {
+    throw new Error(`Asha ask failed: ${ashaDocAskRes.status} ${await ashaDocAskRes.text()}`);
+  }
+  const ashaDocAnswer = await ashaDocAskRes.json();
+  console.log(`Asha answer:`, ashaDocAnswer.answer);
+  console.log(`Asha refused:`, ashaDocAnswer.refused);
+  console.log(`Asha citations count:`, ashaDocAnswer.citations?.length);
+
+  if (ashaDocAnswer.refused) {
+    throw new Error(`Expected Asha to receive an answer, but got refused!`);
+  }
+  if (!ashaDocAnswer.citations || ashaDocAnswer.citations.length === 0) {
+    throw new Error(`Expected citations for Asha, got 0.`);
+  }
+
+  // 10. Login as Neha -> Neha cannot see it and is refused
+  console.log('\n--- 10. Login as Neha & Verify Access Denied Before Share ---');
+  const nehaLoginRes = await fetch(`${BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: 'neha.desai@northwind.example',
+      password: 'changeme123'
+    })
+  });
+  if (!nehaLoginRes.ok) {
+    throw new Error(`Login Neha failed: ${nehaLoginRes.status} ${await nehaLoginRes.text()}`);
+  }
+  const nehaToken = (await nehaLoginRes.json()).access_token;
+  const nehaMeRes = await fetch(`${BASE_URL}/auth/me`, {
+    headers: { 'Authorization': `Bearer ${nehaToken}` }
+  });
+  const nehaMe = await nehaMeRes.json();
+  console.log(`Neha user profile: id=${nehaMe.id}, name=${nehaMe.name}`);
+
+  // Neha asks -> must be refused
+  const nehaAskBeforeRes = await fetch(`${BASE_URL}/ask`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${nehaToken}`
+    },
+    body: JSON.stringify({
+      question: falconQuestion,
+      source_ids: [docId]
+    })
+  });
+  const nehaAskBeforeAnswer = await nehaAskBeforeRes.json();
+  console.log(`Neha before share refused:`, nehaAskBeforeAnswer.refused);
+  if (!nehaAskBeforeAnswer.refused) {
+    throw new Error(`Expected Neha to be refused before document was shared, but was answered!`);
+  }
+
+  // Neha checks shared documents list
+  const nehaSharedRes = await fetch(`${BASE_URL}/documents?scope=shared`, {
+    headers: { 'Authorization': `Bearer ${nehaToken}` }
+  });
+  const nehaSharedDocs = await nehaSharedRes.json();
+  if (nehaSharedDocs.some((d) => d.id === docId)) {
+    throw new Error(`Document ${docId} unexpectedly visible in Neha's shared documents list before sharing!`);
+  }
+  console.log(`Verified doc ${docId} is not visible to Neha.`);
+
+  // 11. Asha shares document with Neha
+  console.log('\n--- 11. Asha Shares Document with Neha ---');
+  const shareRes = await fetch(`${BASE_URL}/documents/${docId}/shares`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${ashaToken}`
+    },
+    body: JSON.stringify({
+      grantee_type: 'user',
+      value: nehaMe.id,
+      include_sensitive: false
+    })
+  });
+  if (!shareRes.ok) {
+    throw new Error(`Sharing failed: ${shareRes.status} ${await shareRes.text()}`);
+  }
+  const shareData = await shareRes.json();
+  const shareId = shareData.id;
+  console.log(`Document successfully shared with Neha. Share ID: ${shareId}`);
+
+  // 12. Neha asks about document -> now answered!
+  console.log('\n--- 12. Neha Asks About Document After Share ---');
+  const nehaAskAfterRes = await fetch(`${BASE_URL}/ask`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${nehaToken}`
+    },
+    body: JSON.stringify({
+      question: falconQuestion,
+      source_ids: [docId]
+    })
+  });
+  const nehaAskAfterAnswer = await nehaAskAfterRes.json();
+  console.log(`Neha after share refused:`, nehaAskAfterAnswer.refused);
+  console.log(`Neha answer:`, nehaAskAfterAnswer.answer);
+  if (nehaAskAfterAnswer.refused) {
+    throw new Error(`Expected Neha to receive answer after share, but was refused!`);
+  }
+
+  // 13. Asha revokes sharing
+  console.log('\n--- 13. Asha Revokes Sharing ---');
+  const revokeRes = await fetch(`${BASE_URL}/documents/${docId}/shares/${shareId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${ashaToken}` }
+  });
+  if (revokeRes.status !== 204) {
+    throw new Error(`Revoke share failed: ${revokeRes.status} ${await revokeRes.text()}`);
+  }
+  console.log(`Share ${shareId} revoked successfully.`);
+
+  // 14. Neha asks again -> refused!
+  console.log('\n--- 14. Neha Asks Again After Revocation (Refusal Expected) ---');
+  const nehaAskRevokedRes = await fetch(`${BASE_URL}/ask`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${nehaToken}`
+    },
+    body: JSON.stringify({
+      question: falconQuestion,
+      source_ids: [docId]
+    })
+  });
+  const nehaAskRevokedAnswer = await nehaAskRevokedRes.json();
+  console.log(`Neha after revoke refused:`, nehaAskRevokedAnswer.refused);
+  if (!nehaAskRevokedAnswer.refused) {
+    throw new Error(`Expected Neha to be refused after revocation, but was answered!`);
+  }
+
+  // 15. Asha deletes document
+  console.log('\n--- 15. Asha Deletes Document ---');
+  const deleteRes = await fetch(`${BASE_URL}/documents/${docId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${ashaToken}` }
+  });
+  if (deleteRes.status !== 204) {
+    throw new Error(`Delete document failed: ${deleteRes.status} ${await deleteRes.text()}`);
+  }
+  console.log(`Document ${docId} deleted successfully.`);
+
+  // Verify doc is deleted (404)
+  const getDeletedRes = await fetch(`${BASE_URL}/documents/${docId}`, {
+    headers: { 'Authorization': `Bearer ${ashaToken}` }
+  });
+  if (getDeletedRes.status !== 404) {
+    throw new Error(`Expected 404 after deletion, got ${getDeletedRes.status}`);
+  }
+  console.log(`Confirmed 404 on deleted document.`);
+
+  // 16. Admin loads /admin/audit/summary
+  console.log('\n--- 16. Admin Monitoring & Audit Summary ---');
+  const adminLoginRes = await fetch(`${BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: 'admin@northwind.example',
+      password: 'changeme123'
+    })
+  });
+  if (!adminLoginRes.ok) {
+    throw new Error(`Admin login failed: ${adminLoginRes.status} ${await adminLoginRes.text()}`);
+  }
+  const adminToken = (await adminLoginRes.json()).access_token;
+
+  const summaryRes = await fetch(`${BASE_URL}/admin/audit/summary?days=7`, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
+  });
+  if (!summaryRes.ok) {
+    throw new Error(`Admin summary failed: ${summaryRes.status} ${await summaryRes.text()}`);
+  }
+  const summaryData = await summaryRes.json();
+  console.log(`Admin audit summary retrieved:`);
+  console.log(`- Total asks: ${summaryData.totals.asks}`);
+  console.log(`- Total searches: ${summaryData.totals.searches}`);
+  console.log(`- Refusal rate: ${(summaryData.totals.refusal_rate * 100).toFixed(1)}%`);
+  console.log(`- Avg latency: ${summaryData.totals.avg_latency_ms.toFixed(1)} ms`);
+  console.log(`- P95 latency: ${summaryData.totals.p95_latency_ms.toFixed(1)} ms`);
+  console.log(`- Uploads: ${summaryData.totals.uploads}`);
+  console.log(`- Active users: ${summaryData.totals.active_users}`);
+  console.log(`- Per day series count: ${summaryData.per_day_series?.length}`);
+
+  // Fetch recent queries
+  const queriesRes = await fetch(`${BASE_URL}/admin/queries?limit=10`, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
+  });
+  const queriesData = await queriesRes.json();
+  console.log(`Admin queries count: ${queriesData.length}`);
+
+  // Fetch admin uploads
+  const uploadsRes = await fetch(`${BASE_URL}/admin/uploads`, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
+  });
+  const uploadsData = await uploadsRes.json();
+  console.log(`Admin uploads audit count: ${uploadsData.length}`);
+
   console.log('\n========================================');
-  console.log('ALL SMOKE TEST CHECKS PASSED SUCCESSFULLY!');
+  console.log('ALL FRONTEND PART 2 SMOKE TEST CHECKS PASSED!');
   console.log('========================================');
 }
 
@@ -168,3 +433,4 @@ run().catch((err) => {
   console.error('Smoke test failed:', err);
   process.exit(1);
 });
+

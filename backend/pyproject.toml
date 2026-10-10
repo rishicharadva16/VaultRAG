@@ -4,4 +4,7 @@ testpaths = ["tests"]
 markers = [
     "slow: tests that load real ML models (deselect with -m 'not slow')",
     "llm: tests that call real LLM via Ollama",
+    "ocr: tests that run real OCR (deselect with -m 'not ocr')",
+    "dataset_model: tests that require legacy dataset access model",
 ]
+

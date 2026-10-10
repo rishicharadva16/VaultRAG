@@ -18,6 +18,7 @@ backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
 from app.config import settings
+settings.ACCESS_MODEL = "dataset"
 from app.ingestion.acl_policy import load_acl_policy
 from app.security.principals import build_principal, doc_tokens, finalize_acl_tokens, user_tokens
 
@@ -52,7 +53,8 @@ def main():
     doc_ids = sorted(policy.keys())
 
     print("=" * 95)
-    print("VaultRAG vs Reference ACL Access Matrix (19 Documents × 7 Accounts)")
+    img_count = sum(1 for d in doc_ids if d.startswith("img:"))
+    print(f"VaultRAG vs Reference ACL Access Matrix ({len(doc_ids)} Documents [{img_count} Images, {len(doc_ids)-img_count} Text/Poison] × {len(USERS)} Accounts = {len(doc_ids)*len(USERS)} Cells)")
     print("=" * 95)
 
     user_labels = [u["user_id"] for u in USERS]
@@ -98,6 +100,11 @@ def main():
             row_symbols.append(symbol)
 
         print(f"{doc_id:<48} | " + " | ".join(f"{s:^7}" for s in row_symbols))
+
+    print("-" * len(header))
+    print(f"Total document checks: {total_checks} ({img_count * len(USERS)} image checks across {len(USERS)} users)")
+    print(f"Document mismatches on dataset user rules: {mismatches}")
+
 
     # ─────────────────────────────────────────────────────────────
     # PART 2: Database Table Row & Column Level Matrix

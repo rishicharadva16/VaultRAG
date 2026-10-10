@@ -23,6 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description="Ingest Northwind corpus into Qdrant")
     parser.add_argument("--include-poison", action="store_true", help="Include poisoned test files")
     parser.add_argument("--include-db", action="store_true", help="Include database table row ingestion")
+    parser.add_argument("--include-images", action="store_true", help="Include corpus image OCR ingestion")
     parser.add_argument("--only", default=None, help="Ingest only a specific file (e.g. hr_policy.pdf)")
     parser.add_argument("--collection", default=None, help="Target Qdrant collection")
     parser.add_argument("--corpus-dir", default=None, help="Custom corpus directory path")
@@ -63,6 +64,20 @@ def main():
                 f"  • {dr['table']:<15} rows: {dr['rows']}, chunks: {dr['total_chunks']} "
                 f"(base: {dr['base_chunks']}, sensitive: {dr['sensitive_chunks']})"
             )
+
+    if args.include_images or (args.only and (args.only.startswith("img:") or any(args.only.endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".webp")))):
+        from app.ingestion.image_ingestion import ingest_images_corpus
+
+        print(f"\nStarting image corpus OCR ingestion into {coll}...")
+        img_results = ingest_images_corpus(store=store, collection=coll, only=args.only)
+        print(f"\nIngested {len(img_results)} image(s):")
+        for ir in img_results:
+            total_chunks += ir["total_chunks"]
+            print(
+                f"  • {ir['file_name']:<35} lines: {ir['ocr_lines']:<2} "
+                f"conf: {ir['mean_confidence']:<5.3f} chunks: {ir['total_chunks']} ({ir['elapsed_seconds']}s)"
+            )
+            print(f"    ACL tokens: {', '.join(ir['acl_tokens'])}")
 
     qdrant_total = store.count(collection=coll)
     print(f"\nTotal chunks ingested this run: {total_chunks}")

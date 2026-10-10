@@ -24,6 +24,7 @@ class User(Base):
     department = Column(String, nullable=True)
     external_id = Column(String, unique=True, nullable=True, index=True)
     active = Column(Boolean, nullable=False, default=True)
+    shown_in_demo = Column(Boolean, nullable=False, default=False)
 
 
 class AuditLog(Base):
@@ -45,3 +46,39 @@ class AuditLog(Base):
     question_hash = Column(String, nullable=True)
     question_length = Column(Integer, nullable=True)
     details = Column(JSONB, nullable=True)
+
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    source_id = Column(String, unique=True, nullable=False, index=True)
+    filename = Column(String, nullable=False)
+    kind = Column(String, nullable=False)  # pdf | image | csv | text
+    size_bytes = Column(Integer, nullable=False)
+    sha256 = Column(String, nullable=False, index=True)
+    owner_id = Column(String, nullable=False, index=True)
+    status = Column(String, nullable=False, default="queued")  # queued | processing | ready | failed
+    reason_code = Column(String, nullable=True)
+    chunk_count = Column(Integer, nullable=False, default=0)
+    sensitive_columns = Column(JSONB, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False,
+                         default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False,
+                         default=lambda: datetime.now(timezone.utc),
+                         onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class DocumentShare(Base):
+    __tablename__ = "document_shares"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    document_id = Column(String, nullable=False, index=True)
+    grantee_type = Column(String, nullable=False)  # user | role | department
+    grantee_value = Column(String, nullable=False)  # user uuid, role name, or department name
+    include_sensitive = Column(Boolean, nullable=False, default=False)
+    granted_by = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False,
+                         default=lambda: datetime.now(timezone.utc))
+

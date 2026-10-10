@@ -401,6 +401,13 @@ ollama pull qwen2.5:3b
 - **URL**: `GET /citation/{chunk_id}`
 - **Auth**: Bearer JWT token required
 - **ACL Enforcement**: Evaluates the user's permission tokens against the chunk's `acl_tokens` in Qdrant. If the chunk does not exist OR the user lacks permission, returns the **exact same 404 body**: `{"detail": "Chunk not found"}`.
+- **Image Support**: For image chunks, returns `kind="image"`, `boxes` (bounding polygons normalized to `[0..1]` relative to original image size), `image_width`, `image_height`, and `ocr_confidence`. Never reveals `acl_tokens` or `file_ref`.
+
+#### `GET /image/{chunk_id}`
+- **URL**: `GET /image/{chunk_id}`
+- **Auth**: Bearer JWT token required
+- **ACL Enforcement**: Checks the requesting user's principal tokens directly in Qdrant. If unauthorized or nonexistent, returns HTTP **404** `{"detail": "Image not found"}`.
+- **Path Traversal Protection**: Only serves whitelisted image files from `data/northwind/rag_demo_dataset/dataset/corpus/images`. Strictly rejects `..`, path separators, and absolute paths.
 
 ### 3. Safe Refusal Design
 When an answer cannot be generated (missing data, forbidden documents, low relevance, or failed verification), VaultRAG returns **one constant string**:
@@ -430,8 +437,9 @@ python scripts\eval_answers.py
 python scripts\walkthrough.py
 
 :: 4. Run test suite
-pytest tests\ -v -m "not llm"
-pytest tests\test_ask.py -v -m llm
+pytest tests\ -v -m "not llm and not ocr"
+pytest tests\ -v -m ocr
+pytest tests\ -v -m llm
 ```
 
 ### 6. Settings & Fallback Warning
@@ -451,6 +459,42 @@ pytest tests\test_ask.py -v -m llm
 | `SUPPORT_THRESHOLD` | `0.05` | Calibrated claim semantic support threshold |
 | `ASK_RATE_LIMIT_PER_MINUTE` | `20` | Sliding window rate limit for `/ask` |
 | `ADMIN_SEES_ALL` | `true` | When true, role:admin is added to chunk ACLs so platform admin can read all documents. All admin reads are audited. |
+| `OCR_ENGINE` | `rapidocr` | OCR Engine: `rapidocr` (default) |
+| `OCR_MIN_CONFIDENCE` | `0.5` | Minimum character/line confidence score |
 
 > **IMPORTANT - DATA SOVEREIGNTY & PRIVACY NOTE:**
 > `LLM_FALLBACK_ENABLED` is set to `false` by default. Enabling fallback to hosted providers (e.g. Groq, Gemini) sends confidential document text outside your local machine to external third-party cloud APIs. Keep this disabled for strict on-premise data confidentiality.
+
+---
+
+### 7. Image Ingestion, Local OCR & Windows Notes (Step 4b)
+
+VaultRAG supports ingesting scanned invoices, expense receipts, employee ID badges, and whiteboard planning photos using local Optical Character Recognition (OCR):
+
+#### Windows Installation Notes
+1. **Zero External Compiler Dependencies**:
+   - Uses `rapidocr-onnxruntime==1.4.4`, `onnxruntime`, `opencv-contrib-python`, and `Pillow`.
+   - **No external Tesseract OCR binary** or Visual C++ redistributable build chain is required on Windows.
+   - Install command:
+     ```cmd
+     pip install rapidocr-onnxruntime==1.4.4 opencv-contrib-python Pillow onnxruntime
+     ```
+2. **Lazy Model Loading**:
+   - The RapidOCR detection and recognition ONNX models are initialized **lazily** upon first call to `ocr_image()`.
+   - FastAPI server startup (`uvicorn app.main:app`) is completely non-blocking (0.0s startup delay).
+3. **Inverse Transformation & Bounding Box Coordinates**:
+   - When preprocessing applies EXIF orientation, deskew rotation ($\theta$), or dynamic upscaling ($s$), the exact inverse affine transformation ($M^{-1}$) is preserved.
+   - Every detected text polygon is mapped back to the **original un-transformed image's pixel coordinate system** and normalized to $[0.0, 1.0]$ relative to `orig_width` and `orig_height`.
+   - Bounding boxes rendered in frontend citations match the original image coordinates served by `GET /image/{chunk_id}` with high fidelity (e.g. 83.3% IoU > 0.5 on tilted scans).
+4. **Running Image Ingestion & Audits**:
+   ```cmd
+   :: Ingest images into Qdrant
+   python scripts\ingest_corpus.py --include-images
+
+   :: Run OCR key-field recall and box IoU quality audit
+   python scripts\ocr_report.py
+
+   :: Run cross-user leak check across all image questions
+   python scripts\leak_check.py
+   ```
+

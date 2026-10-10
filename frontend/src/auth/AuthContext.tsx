@@ -1,18 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { api, clearSession, getAuthToken, setAuthToken, setOnUnauthorized } from '../api/client';
-import { DemoUser, User } from '../api/types';
-
-export const SEED_PASSWORD = 'changeme123';
-
-export const DEMO_USERS: DemoUser[] = [
-  { externalId: 'u_asha', name: 'Asha Patel', email: 'asha.patel@northwind.example', role: 'employee', label: 'Employee (Eng)' },
-  { externalId: 'u_neha', name: 'Neha Desai', email: 'neha.desai@northwind.example', role: 'employee', label: 'Employee (Sales)' },
-  { externalId: 'u_ravi', name: 'Ravi Menon', email: 'ravi.menon@northwind.example', role: 'manager', label: 'Manager (Eng)' },
-  { externalId: 'u_dev', name: 'Dev Joshi', email: 'dev.joshi@northwind.example', role: 'manager', label: 'Manager (Sales)' },
-  { externalId: 'u_meera', name: 'Meera Iyer', email: 'meera.iyer@northwind.example', role: 'hr_admin', label: 'HR Admin' },
-  { externalId: 'u_karan', name: 'Karan Shah', email: 'karan.shah@northwind.example', role: 'finance_admin', label: 'Finance Admin' },
-  { externalId: 'u_admin', name: 'Platform Admin', email: 'admin@northwind.example', role: 'admin', label: 'Administrator' },
-];
+import { User } from '../api/types';
 
 interface AuthContextType {
   user: User | null;
@@ -20,7 +8,7 @@ interface AuthContextType {
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  switchDemoUser: (demoUser: DemoUser) => Promise<void>;
+  switchDemoUser?: (demoUser?: unknown) => Promise<void>;
   clearError: () => void;
   setError: (msg: string | null) => void;
 }
@@ -86,18 +74,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const switchDemoUser = async (demoUser: DemoUser) => {
-    setError(null);
-    setIsLoading(true);
-    try {
-      clearSession();
-      setUser(null);
-      await login(demoUser.email, SEED_PASSWORD);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const clearError = () => setError(null);
 
   return (
@@ -108,7 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error,
         login,
         logout,
-        switchDemoUser,
         clearError,
         setError,
       }}

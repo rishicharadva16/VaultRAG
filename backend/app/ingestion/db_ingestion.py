@@ -87,7 +87,7 @@ def load_db_chunks(db_path: Path | str | None = None) -> list[Chunk]:
     # ─────────────────────────────────────────────────────────────
     # Base: directory is public to internal staff (roles employee, manager, hr_admin, finance_admin)
     # Sensitive: date_of_birth, personal_phone visible to hr_admin and employee themselves
-    emp_base_roles = ["role:employee", "role:manager", "role:hr_admin", "role:finance_admin"]
+    is_dept_model = getattr(settings, "ACCESS_MODEL", "department").lower() == "department"
 
     for e in employees:
         eid = e["employee_id"]
@@ -101,7 +101,14 @@ def load_db_chunks(db_path: Path | str | None = None) -> list[Chunk]:
             f"department {e['department']}, designation {e['designation']}, grade {e['grade']}, "
             f"manager {mgr_disp}, joined {e['join_date']}, location {e['location']}, status {e['status']}."
         )
-        base_tokens = finalize_acl_tokens(emp_base_roles)
+        if is_dept_model:
+            emp_dept = e.get("department")
+            base_roles = ["dept:HR", f"emp:{eid}"]
+            if emp_dept:
+                base_roles.append(f"dept:{emp_dept}")
+        else:
+            base_roles = ["role:employee", "role:manager", "role:hr_admin", "role:finance_admin"]
+        base_tokens = finalize_acl_tokens(base_roles)
         chunks.append(
             Chunk(
                 chunk_id=f"db:employees#{eid}:base",
@@ -128,7 +135,9 @@ def load_db_chunks(db_path: Path | str | None = None) -> list[Chunk]:
             f"Sensitive employee record {eid} (employees table): name {e['name']}, "
             f"date of birth {e['date_of_birth']}, personal phone {e['personal_phone']}."
         )
-        sens_tokens = finalize_acl_tokens(["role:hr_admin", f"emp:{eid}"])
+        sens_tokens = finalize_acl_tokens(
+            ["dept:HR", f"emp:{eid}"] if is_dept_model else ["role:hr_admin", f"emp:{eid}"]
+        )
         chunks.append(
             Chunk(
                 chunk_id=f"db:employees#{eid}:sensitive",
@@ -153,8 +162,8 @@ def load_db_chunks(db_path: Path | str | None = None) -> list[Chunk]:
     # ─────────────────────────────────────────────────────────────
     # 2. SALARIES TABLE (25 rows -> 25 base + 25 sensitive chunks)
     # ─────────────────────────────────────────────────────────────
-    # Base: annual_ctc, revision_pct, revised_ctc, effective_date visible to emp, hr_admin, finance_admin
-    # Sensitive: bank_account_last4 visible to hr_admin and employee themselves
+    # Department mode: Finance + employee themselves can read (HR is NOT included)
+    # Dataset mode: emp, hr_admin, finance_admin
     for s in salaries:
         eid = s["employee_id"]
         emp_name = emp_map.get(eid, {}).get("name", eid)
@@ -167,7 +176,8 @@ def load_db_chunks(db_path: Path | str | None = None) -> list[Chunk]:
             f"annual CTC Rs {inr_format(ann_ctc)} ({ann_ctc}), revision percentage {s['revision_pct']}%, "
             f"revised CTC Rs {inr_format(rev_ctc)} ({rev_ctc}), effective date {s['effective_date']}."
         )
-        base_tokens = finalize_acl_tokens([f"emp:{eid}", "role:hr_admin", "role:finance_admin"])
+        base_roles = ["dept:Finance", f"emp:{eid}"] if is_dept_model else [f"emp:{eid}", "role:hr_admin", "role:finance_admin"]
+        base_tokens = finalize_acl_tokens(base_roles)
         chunks.append(
             Chunk(
                 chunk_id=f"db:salaries#{eid}:base",
@@ -194,7 +204,8 @@ def load_db_chunks(db_path: Path | str | None = None) -> list[Chunk]:
             f"Sensitive salary record for {emp_name} (employee ID {eid}, salaries table): "
             f"bank account last 4 digits {s['bank_account_last4']} (bank_account_last4: {s['bank_account_last4']})."
         )
-        sens_tokens = finalize_acl_tokens(["role:hr_admin", f"emp:{eid}"])
+        sens_roles = ["dept:Finance", f"emp:{eid}"] if is_dept_model else ["role:hr_admin", f"emp:{eid}"]
+        sens_tokens = finalize_acl_tokens(sens_roles)
         chunks.append(
             Chunk(
                 chunk_id=f"db:salaries#{eid}:sensitive",
@@ -238,9 +249,12 @@ def load_db_chunks(db_path: Path | str | None = None) -> list[Chunk]:
             f"status {x['status']}."
         )
 
-        tokens = ["role:finance_admin", f"rolemp:employee@{eid}", f"rolemp:manager@{eid}"]
-        if mgr_id:
-            tokens.append(f"rolemp:manager@{mgr_id}")
+        if is_dept_model:
+            tokens = ["dept:Finance", f"emp:{eid}"]
+        else:
+            tokens = ["role:finance_admin", f"rolemp:employee@{eid}", f"rolemp:manager@{eid}"]
+            if mgr_id:
+                tokens.append(f"rolemp:manager@{mgr_id}")
 
         final_tokens = finalize_acl_tokens(tokens)
         chunks.append(
@@ -267,12 +281,8 @@ def load_db_chunks(db_path: Path | str | None = None) -> list[Chunk]:
     # ─────────────────────────────────────────────────────────────
     # 4. APPROVALS TABLE (40 rows -> 40 base chunks, 0 sensitive)
     # ─────────────────────────────────────────────────────────────
-    # Visible to:
-    # - finance_admin (1=1)
-    # - submitter of underlying expense (if employee or manager)
-    # - line manager of submitter (rolemp:manager@mgr_id)
-    # - approver (rolemp:manager@approver_id)
-    # hr_admin is 0=1 (cannot access)
+    # Department mode: Finance + submitter employee
+    # Dataset mode: finance_admin, submitter, mgr, approver
     for a in approvals:
         aid = a["approval_id"]
         xid = a["expense_id"]
@@ -292,13 +302,18 @@ def load_db_chunks(db_path: Path | str | None = None) -> list[Chunk]:
             f"decision {a['decision']}, decided on {decided}, comments {comments}."
         )
 
-        tokens = ["role:finance_admin"]
-        if eid:
-            tokens.extend([f"rolemp:employee@{eid}", f"rolemp:manager@{eid}"])
-        if mgr_id:
-            tokens.append(f"rolemp:manager@{mgr_id}")
-        if approver_id:
-            tokens.append(f"rolemp:manager@{approver_id}")
+        if is_dept_model:
+            tokens = ["dept:Finance"]
+            if eid:
+                tokens.append(f"emp:{eid}")
+        else:
+            tokens = ["role:finance_admin"]
+            if eid:
+                tokens.extend([f"rolemp:employee@{eid}", f"rolemp:manager@{eid}"])
+            if mgr_id:
+                tokens.append(f"rolemp:manager@{mgr_id}")
+            if approver_id:
+                tokens.append(f"rolemp:manager@{approver_id}")
 
         final_tokens = finalize_acl_tokens(tokens)
         chunks.append(

@@ -15,43 +15,113 @@ from app.security.roles import ROLES
 class Principal:
     user_id: str
     tokens: list[str]
+    name: str | None = None
+    employee_id: str | None = None
+    department: str | None = None
+
+
+LEGACY_DATASET_ROLES: dict[str, list[str]] = {
+    "u_meera": ["hr_admin"],
+    "u_karan": ["finance_admin"],
+    "u_ravi": ["manager"],
+    "u_dev": ["manager"],
+    "u_asha": ["employee"],
+    "u_neha": ["employee"],
+    "u_admin": ["admin"],
+}
 
 
 def build_principal(user: Any) -> Principal:
     """
     Build a security Principal from a database user model or dictionary.
     Freshly built on every request from DB-loaded user attributes.
-    Tokens generated:
+
+    Department mode (Step 5e default):
+      org:northwind (every active user)
+      dept:<Department>
+      emp:<employee_id>
+      usr:<uuid>
+      role:employee or role:admin (exactly one user has role admin)
+
+    Dataset mode (legacy):
       role:<role> for each role
       emp:<employee_id>
       dept:<department>
       rolemp:<role>@<employee_id>
       usr:<user_id>
-    Platform admin role gets ONLY 'role:admin' (which appears in no document ACL).
-    Empty or null source values are skipped.
+      org:northwind
     """
     if isinstance(user, dict):
         user_id = str(user.get("id") or user.get("user_id") or "")
-        roles = user.get("roles") or []
+        ext_id = str(user.get("external_id") or "")
+        name = user.get("name")
+        roles = list(user.get("roles") or [])
         emp_id = user.get("employee_id")
         dept = user.get("department")
+        active = user.get("active", user.get("is_active", True))
     else:
         user_id = str(getattr(user, "id", "") or getattr(user, "user_id", "") or "")
-        roles = getattr(user, "roles", None) or []
+        ext_id = str(getattr(user, "external_id", "") or "")
+        name = getattr(user, "name", None)
+        roles = list(getattr(user, "roles", None) or [])
         emp_id = getattr(user, "employee_id", None)
         dept = getattr(user, "department", None)
+        active = getattr(user, "active", getattr(user, "is_active", True))
+
+    # Deactivated users get NO tokens (fail closed)
+    if active is False:
+        return Principal(user_id=user_id or ext_id, tokens=[], name=name, employee_id=emp_id, department=dept)
+
+    from app.config import settings
+    access_model = getattr(settings, "ACCESS_MODEL", "department").lower()
 
     tokens: set[str] = set()
 
-    # B3: Platform admin role gets no document tokens beyond role:admin
-    if "admin" in roles:
+    if access_model == "department":
+        # 1. Company token for all active users
+        tokens.add("org:northwind")
+
+        # 2. Department token
+        if dept:
+            tokens.add(f"dept:{dept}")
+
+        # 3. Employee ID token
+        if emp_id:
+            tokens.add(f"emp:{emp_id}")
+
+        # 4. User ID tokens
+        if user_id:
+            tokens.add(f"usr:{user_id}")
+        if ext_id and ext_id != user_id:
+            tokens.add(f"usr:{ext_id}")
+
+        # 5. Role token: exactly one admin, everyone else employee
+        if "admin" in roles:
+            tokens.add("role:admin")
+        else:
+            tokens.add("role:employee")
+
+        return Principal(user_id=user_id or ext_id, tokens=sorted(tokens), name=name, employee_id=emp_id, department=dept)
+
+    # ── Dataset Mode (legacy) ──
+    # If DB roles were updated to ["employee"], recover legacy roles for dataset mode
+    if ext_id in LEGACY_DATASET_ROLES and roles == ["employee"]:
+        effective_roles = LEGACY_DATASET_ROLES[ext_id]
+    elif user_id in LEGACY_DATASET_ROLES and roles == ["employee"]:
+        effective_roles = LEGACY_DATASET_ROLES[user_id]
+    else:
+        effective_roles = roles
+
+    if "admin" in effective_roles:
         tokens.add("role:admin")
-        return Principal(user_id=user_id, tokens=sorted(tokens))
+        tokens.add("org:northwind")
+        return Principal(user_id=user_id or ext_id, tokens=sorted(tokens), name=name, employee_id=emp_id, department=dept)
 
-    filtered_roles = [r for r in roles if r in ROLES and r != "admin"]
+    filtered_roles = [r for r in effective_roles if r in ROLES and r != "admin"]
     if not filtered_roles:
-        return Principal(user_id=user_id, tokens=[])
+        return Principal(user_id=user_id or ext_id, tokens=[], name=name, employee_id=emp_id, department=dept)
 
+    tokens.add("org:northwind")
     for r in filtered_roles:
         tokens.add(f"role:{r}")
 
@@ -67,8 +137,10 @@ def build_principal(user: Any) -> Principal:
 
     if user_id:
         tokens.add(f"usr:{user_id}")
+    if ext_id and ext_id != user_id:
+        tokens.add(f"usr:{ext_id}")
 
-    return Principal(user_id=user_id, tokens=sorted(tokens))
+    return Principal(user_id=user_id or ext_id, tokens=sorted(tokens), name=name, employee_id=emp_id, department=dept)
 
 
 def user_tokens(user: Any) -> set[str]:
@@ -76,6 +148,11 @@ def user_tokens(user: Any) -> set[str]:
     Generate document permission tokens held by a user as a set.
     Admin role gets no document tokens (role:admin is not a document token).
     """
+    from app.config import settings
+    access_model = getattr(settings, "ACCESS_MODEL", "department").lower()
+    if access_model == "dataset":
+        p = build_principal(user)
+        return {t for t in p.tokens if t not in ("role:admin", "org:northwind")}
     return {t for t in build_principal(user).tokens if t != "role:admin"}
 
 

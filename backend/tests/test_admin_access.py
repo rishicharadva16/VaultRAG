@@ -63,7 +63,7 @@ def test_normal_user_results_unchanged_by_admin_flag():
     store = SecureStore()
     asha_p = Principal(
         user_id="u_asha",
-        tokens=["role:employee", "dept:Engineering", "emp:E1004", "usr:u_asha"],
+        tokens=["org:northwind", "role:employee", "dept:Engineering", "emp:E1004", "usr:u_asha"],
     )
 
     # Asha's results for HR notice query
@@ -75,8 +75,15 @@ def test_normal_user_results_unchanged_by_admin_flag():
 
     assert len(asha_results) > 0
     # Every chunk returned for Asha must only be what Asha is permitted to see
+    allowed_sources = {
+        "pdf:hr_policy.pdf",
+        "pdf:leave_policy.pdf",
+        "pdf:travel_expense_policy.pdf",
+        "pdf:it_security_policy.pdf",
+        "db:employees",
+    }
     for r in asha_results:
-        assert r.source_id in ("pdf:hr_policy.pdf", "pdf:travel_expense_policy.pdf"), (
+        assert r.source_id in allowed_sources, (
             f"Unexpected source for Asha: {r.source_id}"
         )
 
@@ -89,7 +96,9 @@ def test_admin_token_set_is_strictly_role_admin(db: Session):
 
     p = build_principal(admin_user)
     assert p.user_id == str(admin_user.id)
-    assert p.tokens == ["role:admin"], f"Admin tokens must be strictly ['role:admin'], got {p.tokens}"
+    assert "role:admin" in p.tokens, f"Admin tokens must contain 'role:admin', got {p.tokens}"
+    assert "org:northwind" in p.tokens
+    assert not any(t.startswith("dept:") for t in p.tokens)
     assert "*" not in p.tokens
     assert "admin:*" not in p.tokens
     assert "role:*" not in p.tokens

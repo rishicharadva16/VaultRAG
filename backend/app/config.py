@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     OLLAMA_URL: str = "http://localhost:11434"
 
     # CORS – comma-separated origins, no wildcards, no "null"
-    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
+    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080"
 
     # Embeddings (Step 2)
     EMBED_MODEL: str = "BAAI/bge-m3"
@@ -59,12 +59,29 @@ class Settings(BaseSettings):
     ASK_RATE_LIMIT_PER_MINUTE: int = 20
 
 
+    # Access Model (Step 5e: department | dataset)
+    ACCESS_MODEL: str = "department"
+    POLICIES_COMPANY_WIDE: bool = True
+
+    # Demo Visible Users (comma-separated emails or IDs)
+    DEMO_VISIBLE_USERS: str = "admin@northwind.example,meera.iyer@northwind.example,karan.shah@northwind.example,asha.patel@northwind.example,u_admin,u_meera,u_karan,u_asha"
+
     # Admin Access
     # When true, role:admin is added to the ACL of every chunk so the platform admin can read all documents. All admin reads are audited.
     ADMIN_SEES_ALL: bool = True
 
+    # OCR & Image Ingestion (Step 4b)
+    OCR_ENGINE: str = "rapidocr"
+    OCR_MIN_CONFIDENCE: float = 0.5
+
     # Dataset path (relative to repo root)
     DATASET_DIR: str = "data/northwind/rag_demo_dataset"
+
+    # Live Upload & Sharing (Step 6)
+    UPLOAD_ROLES: str = "employee,manager,hr_admin,finance_admin,admin"
+    MAX_UPLOAD_MB: int = 20
+    UPLOADS_PER_HOUR: int = 20
+    STORAGE_DIR: str = str(_repo_root / "storage")
 
     model_config = {
         "env_file": str(_env_file) if _env_file.exists() else ".env",
@@ -82,6 +99,17 @@ class Settings(BaseSettings):
     def dataset_path(self) -> Path:
         """Resolve DATASET_DIR relative to repository root."""
         return (_repo_root / self.DATASET_DIR).resolve()
+
+    def storage_path(self) -> Path:
+        """Resolve STORAGE_DIR to absolute path."""
+        p = Path(self.STORAGE_DIR)
+        if not p.is_absolute():
+            return (_repo_root / p).resolve()
+        return p.resolve()
+
+    def upload_role_list(self) -> list[str]:
+        """List of roles permitted to upload files."""
+        return [r.strip() for r in self.UPLOAD_ROLES.split(",") if r.strip()]
 
 
 settings = Settings()

@@ -48,3 +48,6 @@ powershell.cmd
 # Datasets (read-only)
 data/northwind/
 
+# Step 6 Storage
+storage/
+

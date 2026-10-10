@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Send, Square } from 'lucide-react';
+import { ArrowUp, Square } from 'lucide-react';
 
 interface ComposerProps {
   value: string;
@@ -47,7 +47,7 @@ export const Composer: React.FC<ComposerProps> = ({
 
   return (
     <div
-      className={`rounded-card border border-border bg-surface p-3 shadow-sm transition-all focus-within:border-accent focus-within:ring-1 focus-within:ring-accent ${className}`}
+      className={`rounded-card border border-border bg-surface p-3.5 shadow-soft transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-focus-ring/20 ${className}`}
       data-testid="composer"
     >
       <label htmlFor="chat-composer-input" className="sr-only">
@@ -59,22 +59,27 @@ export const Composer: React.FC<ComposerProps> = ({
         value={value}
         onChange={(e) => onChange(e.target.value.slice(0, MAX_CHARS))}
         onKeyDown={handleKeyDown}
-        disabled={disabled}
-        placeholder="Ask a question about policies, contracts, or records... (Enter to send, Shift+Enter for newline)"
+        disabled={disabled || isLoading}
+        placeholder="Ask a question about policies, contracts, or records..."
         rows={2}
-        className="w-full resize-none bg-transparent text-sm text-text placeholder:text-text-muted outline-none disabled:opacity-50 font-sans"
+        className="w-full resize-none bg-transparent text-sm text-text placeholder:text-text-muted outline-none disabled:opacity-50 font-sans leading-relaxed"
         aria-label="Ask a question about your documents"
       />
 
-      <div className="mt-2 flex items-center justify-between border-t border-border-subtle pt-2 text-xs">
-        <span
-          className={`font-mono text-xs ${
-            isTooLong ? 'text-danger font-semibold' : 'text-text-muted'
-          }`}
-          data-testid="char-counter"
-        >
-          {value.length}/{MAX_CHARS}
-        </span>
+      <div className="mt-2.5 flex items-center justify-between border-t border-border-subtle pt-2.5 text-xs">
+        <div className="flex items-center gap-3 text-text-muted">
+          <span className="hidden sm:inline text-[11px]">
+            Enter to send <span className="opacity-40">•</span> Shift+Enter for newline
+          </span>
+          <span
+            className={`font-mono text-[11px] ${
+              isTooLong ? 'text-danger font-semibold' : 'text-text-muted'
+            }`}
+            data-testid="char-counter"
+          >
+            {value.length}/{MAX_CHARS}
+          </span>
+        </div>
 
         <div className="flex items-center gap-2">
           {isLoading ? (
@@ -82,10 +87,10 @@ export const Composer: React.FC<ComposerProps> = ({
               type="button"
               onClick={onStop}
               aria-label="Stop generating answer"
-              className="flex items-center gap-1.5 rounded-btn bg-danger px-3 py-1.5 font-medium text-white shadow-xs hover:bg-red-700 transition-colors"
+              className="flex items-center gap-1.5 rounded-btn bg-danger px-3 py-1.5 font-semibold text-xs text-white shadow-xs hover:bg-danger/90 transition-colors min-h-[38px]"
               data-testid="stop-button"
             >
-              <Square size={14} className="fill-current" />
+              <Square size={13} className="fill-current" />
               <span>Stop</span>
             </button>
           ) : (
@@ -94,11 +99,10 @@ export const Composer: React.FC<ComposerProps> = ({
               onClick={onSend}
               disabled={isEmpty || isTooLong || disabled}
               aria-label="Send question"
-              className="flex items-center gap-1.5 rounded-btn bg-accent px-3 py-1.5 font-medium text-accent-contrast shadow-xs hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-gradient text-white shadow-sm hover:shadow-md hover:scale-105 active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               data-testid="send-button"
             >
-              <span>Send</span>
-              <Send size={14} aria-hidden="true" />
+              <ArrowUp size={18} strokeWidth={2.5} aria-hidden="true" />
             </button>
           )}
         </div>
