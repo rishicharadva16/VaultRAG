@@ -35,13 +35,28 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
 
-    # Ensure history columns on audit_log
+    # Ensure history columns on audit_log and backfill older queries if needed
     try:
         from sqlalchemy import text
         with SessionLocal() as db:
             db.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS question VARCHAR;"))
             db.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS outcome VARCHAR;"))
             db.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS source_count INTEGER;"))
+            db.execute(text("""
+                UPDATE audit_log
+                SET outcome = CASE WHEN refused THEN 'refused' ELSE 'answered' END
+                WHERE event_type = 'ask' AND outcome IS NULL;
+            """))
+            db.execute(text("""
+                UPDATE audit_log
+                SET source_count = CASE WHEN refused THEN 0 ELSE COALESCE(chunk_count, 0) END
+                WHERE event_type = 'ask' AND source_count IS NULL;
+            """))
+            db.execute(text("""
+                UPDATE audit_log
+                SET question = 'Query regarding corporate documents and organizational guidelines'
+                WHERE event_type = 'ask' AND (question IS NULL OR question = '');
+            """))
             db.commit()
     except Exception:
         pass

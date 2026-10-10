@@ -266,3 +266,8 @@ export interface HistoryItem {
   department?: string | null;
 }
 
+export interface HistoryResponse {
+  items: HistoryItem[];
+  total: number;
+}
+

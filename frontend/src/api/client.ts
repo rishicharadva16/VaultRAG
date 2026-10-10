@@ -13,7 +13,7 @@ import {
   DocumentUploadResponse,
   HealthResponse,
   HighlightSpan,
-  HistoryItem,
+  HistoryResponse,
   PatchAdminUserPayload,
   SearchResponse,
   SharingTargets,
@@ -320,7 +320,7 @@ export const api = {
           try {
             const err = JSON.parse(xhr.responseText);
             if (err && err.detail) detail = err.detail;
-          } catch {}
+          } catch { }
           if (xhr.status === 403) {
             reject(new ApiClientError(403, 'Your role cannot upload documents'));
           } else if (xhr.status === 413) {
@@ -513,24 +513,28 @@ export const api = {
     });
   },
 
-  getHistory: async (params?: {
-    limit?: number;
-    offset?: number;
-    q?: string;
-  }): Promise<HistoryItem[]> => {
-    const searchParams = new URLSearchParams();
-    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
-    if (params?.offset !== undefined) searchParams.set('offset', String(params.offset));
-    if (params?.q) searchParams.set('q', params.q);
-    const qs = searchParams.toString();
-    return request<HistoryItem[]>(`/history${qs ? `?${qs}` : ''}`, {
+  getHistory: async (
+    params?: { limit?: number; offset?: number; q?: string },
+    signal?: AbortSignal
+  ): Promise<HistoryResponse> => {
+    let url = `/history?limit=${params?.limit ?? 50}&offset=${params?.offset ?? 0}`;
+    if (params?.q) {
+      url += `&q=${encodeURIComponent(params.q)}`;
+    }
+    return request<HistoryResponse>(url, {
+      method: 'GET',
+      signal,
       requiresAuth: true,
     });
   },
 
-  deleteHistory: async (id: string): Promise<void> => {
-    return request<void>(`/history/${encodeURIComponent(id)}`, {
+  deleteHistory: async (
+    id: string,
+    signal?: AbortSignal
+  ): Promise<{ status: string; deleted_id: string }> => {
+    return request<{ status: string; deleted_id: string }>(`/history/${encodeURIComponent(id)}`, {
       method: 'DELETE',
+      signal,
       requiresAuth: true,
     });
   },

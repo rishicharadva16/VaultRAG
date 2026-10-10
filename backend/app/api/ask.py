@@ -139,48 +139,52 @@ def ask(
     src_cnt = len(result.citations) if not result.refused else 0
 
     # Audit (never log chunk text or answer text; question and metadata only)
-    write_audit(
-        db,
-        user_id=user_id_str,
-        event="ask" if not result._reason == "output_guard" else "SECURITY",
-        event_type="ask" if not result._reason == "output_guard" else "SECURITY",
-        refused=result.refused,
-        reason_code=result._reason,
-        latency_ms=latency_ms,
-        chunk_count=len(result.citations),
-        admin_access=is_admin,
-        question_hash=q_hash,
-        question_length=q_len,
-        question=body.question,
-        outcome=outcome_val,
-        source_count=src_cnt,
-        details={
-            "chunk_ids": [c.chunk_id for c in result.citations],
-            "refused": result.refused,
-            "reason": result._reason,
-            "latency_s": round(elapsed, 2),
-        },
-    )
-
-    # Security events get a separate audit entry
-    if result._reason == "output_guard":
+    try:
         write_audit(
             db,
             user_id=user_id_str,
-            event="SECURITY",
-            event_type="SECURITY",
-            refused=True,
-            reason_code="output_guard",
+            event="ask" if not result._reason == "output_guard" else "SECURITY",
+            event_type="ask" if not result._reason == "output_guard" else "SECURITY",
+            refused=result.refused,
+            reason_code=result._reason,
             latency_ms=latency_ms,
-            chunk_count=0,
+            chunk_count=len(result.citations),
             admin_access=is_admin,
             question_hash=q_hash,
             question_length=q_len,
+            question=body.question,
+            outcome=outcome_val,
+            source_count=src_cnt,
             details={
-                "reason": "output_guard",
-                "action": "blocked",
+                "chunk_ids": [c.chunk_id for c in result.citations],
+                "refused": result.refused,
+                "reason": result._reason,
+                "latency_s": round(elapsed, 2),
             },
         )
+
+        # Security events get a separate audit entry
+        if result._reason == "output_guard":
+            write_audit(
+                db,
+                user_id=user_id_str,
+                event="SECURITY",
+                event_type="SECURITY",
+                refused=True,
+                reason_code="output_guard",
+                latency_ms=latency_ms,
+                chunk_count=0,
+                admin_access=is_admin,
+                question_hash=q_hash,
+                question_length=q_len,
+                details={
+                    "reason": "output_guard",
+                    "action": "blocked",
+                },
+            )
+    except Exception:
+        # Logging error must never break the chat
+        pass
 
     return AskResponse(
         answer=result.answer,

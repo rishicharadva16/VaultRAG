@@ -27,6 +27,7 @@ export const HistoryPage: React.FC = () => {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -45,6 +46,7 @@ export const HistoryPage: React.FC = () => {
   const fetchHistory = useCallback(
     async (q: string, currentOffset: number, append: boolean = false) => {
       try {
+        setError(null);
         if (append) {
           setIsLoadingMore(true);
         } else {
@@ -57,15 +59,25 @@ export const HistoryPage: React.FC = () => {
           q: q.trim() || undefined,
         });
 
+        const newItems: HistoryItem[] = Array.isArray(data)
+          ? data
+          : (Array.isArray((data as any)?.items) ? (data as any).items : []);
+
         if (append) {
-          setItems((prev) => [...prev, ...data]);
+          setItems((prev) => [...prev, ...newItems]);
         } else {
-          setItems(data);
+          setItems(newItems);
         }
 
-        setHasMore(data.length >= PAGE_SIZE);
-      } catch (err) {
+        const totalCount = typeof (data as any)?.total === 'number'
+          ? (data as any).total
+          : newItems.length;
+
+        setHasMore(currentOffset + newItems.length < totalCount);
+      } catch (err: unknown) {
         console.error('Failed to load history', err);
+        const msg = err instanceof Error ? err.message : 'Failed to load history. Please try again.';
+        setError(msg);
       } finally {
         setIsLoading(false);
         setIsLoadingMore(false);
@@ -208,6 +220,19 @@ export const HistoryPage: React.FC = () => {
           <div className="flex flex-col items-center justify-center py-20 text-center text-text-muted gap-3">
             <Loader2 size={28} className="animate-spin text-accent" aria-hidden="true" />
             <p className="text-sm font-medium">Loading history...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-2xl border border-danger/30 bg-danger/5">
+            <AlertTriangle size={30} className="text-danger mb-3" aria-hidden="true" />
+            <p className="text-base font-semibold text-text">Failed to load history</p>
+            <p className="text-sm text-text-muted mt-1 max-w-sm">{error}</p>
+            <button
+              type="button"
+              onClick={() => fetchHistory(debouncedQuery, 0, false)}
+              className="mt-4 px-4 py-2 rounded-xl bg-accent text-white font-semibold text-xs hover:bg-accent/90 transition-colors cursor-pointer"
+            >
+              Retry
+            </button>
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center rounded-2xl border border-border bg-surface">
