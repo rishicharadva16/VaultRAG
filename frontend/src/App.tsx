@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
+import { ChatProvider } from './chat/ChatContext';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { AdminRouteGuard } from './auth/AdminRouteGuard';
 import { AppShell } from './components/AppShell';
@@ -15,7 +16,8 @@ import { NotFoundPage } from './pages/NotFoundPage';
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <ChatProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route
@@ -85,7 +87,8 @@ export const App: React.FC = () => {
           />
         </Routes>
       </BrowserRouter>
-    </AuthProvider>
+    </ChatProvider>
+  </AuthProvider>
   );
 };
 

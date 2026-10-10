@@ -23,6 +23,7 @@ import {
   Loader2,
   X,
   RotateCcw,
+  Trash2,
 } from 'lucide-react';
 
 const STANDARD_DEPARTMENTS = ['Engineering', 'Finance', 'HR', 'Sales'];
@@ -57,6 +58,8 @@ export const UserManagementPage: React.FC = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [deactivatingUser, setDeactivatingUser] = useState<AdminUser | null>(null);
+  const [deletingUser, setDeletingUser] = useState<AdminUser | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
 
   // Active row action menu ID
@@ -391,6 +394,26 @@ export const UserManagementPage: React.FC = () => {
       } else {
         showToast('Failed to deactivate user.', 'error');
       }
+    }
+  };
+
+  // Delete User Handler
+  const confirmDeleteUser = async () => {
+    if (!deletingUser) return;
+    setIsDeleting(true);
+    try {
+      await api.deleteAdminUser(deletingUser.id);
+      showToast(`User ${deletingUser.name} has been deleted.`);
+      setDeletingUser(null);
+      setUsers((prev) => prev.filter((u) => u.id !== deletingUser.id));
+    } catch (err: unknown) {
+      if (err instanceof ApiClientError) {
+        showToast(err.message, 'error');
+      } else {
+        showToast('Failed to delete user.', 'error');
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -794,6 +817,26 @@ export const UserManagementPage: React.FC = () => {
                                     <Key size={14} className="text-text-muted" aria-hidden="true" />
                                     <span>Reset password</span>
                                   </button>
+
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    disabled={isSelf}
+                                    title={isSelf ? 'Admin cannot delete themselves' : undefined}
+                                    onClick={() => {
+                                      setActionMenuOpenId(null);
+                                      setDeletingUser(u);
+                                    }}
+                                    className={`flex w-full items-center gap-2 rounded-btn px-2.5 py-1.5 text-xs font-medium text-left transition-colors ${
+                                      isSelf
+                                        ? 'opacity-40 cursor-not-allowed text-text-muted'
+                                        : 'text-danger hover:bg-red-50 dark:hover:bg-red-950/40'
+                                    }`}
+                                    data-testid={`action-delete-${u.id}`}
+                                  >
+                                    <Trash2 size={14} aria-hidden="true" />
+                                    <span>Delete user</span>
+                                  </button>
                                 </div>
                               )}
                             </div>
@@ -911,6 +954,26 @@ export const UserManagementPage: React.FC = () => {
                             >
                               <Key size={14} className="text-text-muted" aria-hidden="true" />
                               <span>Reset password</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              role="menuitem"
+                              disabled={isSelf}
+                              title={isSelf ? 'Admin cannot delete themselves' : undefined}
+                              onClick={() => {
+                                setActionMenuOpenId(null);
+                                setDeletingUser(u);
+                              }}
+                              className={`flex w-full items-center gap-2 rounded-btn px-3 py-2 text-xs font-medium min-h-[40px] text-left transition-colors ${
+                                isSelf
+                                  ? 'opacity-40 cursor-not-allowed text-text-muted'
+                                  : 'text-danger hover:bg-red-50 dark:hover:bg-red-950/40'
+                              }`}
+                              data-testid={`mobile-action-delete-${u.id}`}
+                            >
+                              <Trash2 size={14} aria-hidden="true" />
+                              <span>Delete user</span>
                             </button>
                           </div>
                         )}
@@ -1334,6 +1397,64 @@ export const UserManagementPage: React.FC = () => {
               >
                 <UserX size={14} aria-hidden="true" />
                 <span>Deactivate user</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DELETE USER CONFIRMATION DIALOG ── */}
+      {deletingUser && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-confirm-title"
+        >
+          <div className="relative w-full max-w-sm rounded-card border border-border bg-surface p-6 shadow-panel space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60 text-danger shrink-0">
+                <Trash2 size={20} aria-hidden="true" />
+              </div>
+              <div>
+                <h2 id="delete-confirm-title" className="text-base font-bold text-text">
+                  Delete User
+                </h2>
+                <p className="text-xs text-text-muted">Permanent action</p>
+              </div>
+            </div>
+
+            <p className="text-xs md:text-sm text-text leading-relaxed">
+              Are you sure you want to permanently delete <strong className="font-semibold text-text">{deletingUser.name}</strong> ({deletingUser.email})? This action cannot be undone and will revoke all access immediately.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border-subtle">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeletingUser(null)}
+                className="rounded-btn border border-border bg-surface-raised px-3.5 py-2 text-xs font-semibold text-text hover:bg-border transition-colors min-h-[40px]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={confirmDeleteUser}
+                className="inline-flex items-center justify-center gap-1.5 rounded-btn bg-danger px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-red-700 transition-colors min-h-[40px] focus-visible:ring-2 focus-visible:ring-danger disabled:opacity-50"
+                data-testid="confirm-delete-user"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} aria-hidden="true" />
+                    <span>Delete user</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

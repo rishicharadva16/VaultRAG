@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api, ApiClientError } from '../api/client';
 import { DocumentItem, DocumentKind, DocumentStatus, CitationItem } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
+import { useChat } from '../chat/ChatContext';
 import { CitationPanel } from '../components/CitationPanel';
 import { ShareDialog } from '../components/ShareDialog';
 import { ErrorBanner } from '../components/ErrorBanner';
@@ -107,6 +108,7 @@ function StatusChip({ status, reasonCode }: { status: DocumentStatus; reasonCode
 
 export const DocumentsPage: React.FC = () => {
   const { user } = useAuth();
+  const { hasActiveConversation, handleNewChat, setSourceFilter } = useChat();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<'mine' | 'shared'>('mine');
@@ -355,6 +357,17 @@ export const DocumentsPage: React.FC = () => {
 
   // Ask about this document (navigates to Chat with filter chip)
   const handleAskAboutDocument = (doc: DocumentItem) => {
+    if (hasActiveConversation) {
+      const confirmed = window.confirm('Start a new chat for this document?');
+      if (!confirmed) {
+        return;
+      }
+      handleNewChat();
+    }
+    setSourceFilter({
+      source_ids: [doc.id],
+      filename: doc.filename,
+    });
     navigate('/chat', {
       state: {
         source_ids: [doc.id],
@@ -403,6 +416,15 @@ export const DocumentsPage: React.FC = () => {
                 Upload and securely share documents with row-level and column-level access controls.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center justify-center gap-2 rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-accent-contrast shadow-xs hover:bg-accent-hover transition-colors shrink-0 self-start sm:self-auto cursor-pointer focus-visible:ring-2 focus-visible:ring-accent outline-none"
+              data-testid="upload-document-button"
+            >
+              <Upload size={16} aria-hidden="true" />
+              <span>Upload Document</span>
+            </button>
           </div>
 
           {/* Upload Card / Dropzone */}

@@ -221,3 +221,43 @@ async def test_deactivated_user_rejected_immediately_on_next_request(client, db)
     finally:
         db.query(User).filter(User.email == temp_email).delete()
         db.commit()
+
+
+import uuid
+
+
+@pytest.mark.asyncio
+async def test_admin_delete_user(client, db):
+    """DELETE /admin/users/{id} deletes user, prevents self-delete, blocks non-admin."""
+    admin_token = await _get_token(client, "admin@northwind.example")
+    h_admin = auth_header(admin_token)
+
+    # 1. Non-admin gets 404
+    emp_token = await _get_token(client, "asha.patel@northwind.example")
+    h_emp = auth_header(emp_token)
+    resp_emp = await client.delete("/admin/users/any-id", headers=h_emp)
+    assert resp_emp.status_code == 404
+
+    # 2. Admin cannot delete themselves (400)
+    admin_user = db.query(User).filter(User.email == "admin@northwind.example").first()
+    assert admin_user is not None
+    resp_self = await client.delete(f"/admin/users/{admin_user.id}", headers=h_admin)
+    assert resp_self.status_code == 400
+
+    # 3. Create temp user and delete them (204)
+    temp_email = f"delete_me_{uuid.uuid4().hex[:6]}@example.com"
+    create_resp = await client.post("/admin/users", headers=h_admin, json={
+        "name": "Delete Target",
+        "email": temp_email,
+        "password": "temppassword123",
+    })
+    assert create_resp.status_code == 201
+    target_id = create_resp.json()["id"]
+
+    del_resp = await client.delete(f"/admin/users/{target_id}", headers=h_admin)
+    assert del_resp.status_code == 204
+
+    # Confirm user is gone (404 on repeat delete or patch)
+    del_again = await client.delete(f"/admin/users/{target_id}", headers=h_admin)
+    assert del_again.status_code == 404
+

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.audit.logger import write_audit
-from app.db.models import User
+from app.db.models import User, DocumentShare
 from app.db.session import get_db
 from app.security.deps import require_admin
 from app.security.passwords import (
@@ -227,6 +227,35 @@ def update_active(
         details={"target": user_id, "old_active": old_active, "new_active": user.active},
     )
     return _to_out(user)
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    user_id: str,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    user = get_user(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if user.id == admin.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Admin cannot delete themselves")
+
+    db.query(DocumentShare).filter(
+        (DocumentShare.grantee_type == "user") & (DocumentShare.grantee_value == user.id)
+    ).delete(synchronize_session=False)
+
+    db.delete(user)
+    db.commit()
+
+    write_audit(
+        db,
+        user_id=admin.id,
+        event="admin.delete_user",
+        details={"target": user_id, "deleted_user_email": user.email},
+    )
+    return None
 
 
 # ── Step 6 Admin Monitoring Endpoints ─────────────────────────

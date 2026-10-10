@@ -1,153 +1,78 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { api, ApiClientError } from '../api/client';
-import { CitationItem } from '../api/types';
+import React, { useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Composer } from '../components/Composer';
 import { EmptyState } from '../components/EmptyState';
-import { MessageList, ChatMessage } from '../components/MessageList';
+import { MessageList } from '../components/MessageList';
 import { CitationPanel } from '../components/CitationPanel';
 import { ErrorBanner } from '../components/ErrorBanner';
-import { PlusCircle } from 'lucide-react';
-
-const TIMEOUT_SECONDS = 130;
+import { useChat } from '../chat/ChatContext';
+import { PlusCircle, X } from 'lucide-react';
 
 export const ChatPage: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputQuestion, setInputQuestion] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [lastQuestion, setLastQuestion] = useState<string>('');
-  const [selectedCitation, setSelectedCitation] = useState<CitationItem | null>(null);
+  const {
+    messages,
+    selectedCitation,
+    setSelectedCitation,
+    inputQuestion,
+    setInputQuestion,
+    isLoading,
+    elapsedSeconds,
+    errorMessage,
+    setErrorMessage,
+    lastQuestion,
+    sourceFilter,
+    setSourceFilter,
+    handleSendQuestion,
+    handleStop,
+    handleRetry,
+    handleNewChat,
+  } = useChat();
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const timerIntervalRef = useRef<number | null>(null);
-  const timeoutIdRef = useRef<number | null>(null);
+  const location = useLocation();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const clearTimers = useCallback(() => {
-    if (timerIntervalRef.current !== null) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
+  // Update source filter if location state changes
+  useEffect(() => {
+    const state = location.state as { source_ids?: string[]; source_filename?: string } | undefined;
+    if (state?.source_ids && state.source_ids.length > 0 && state.source_filename) {
+      setSourceFilter({
+        source_ids: state.source_ids,
+        filename: state.source_filename,
+      });
     }
-    if (timeoutIdRef.current !== null) {
-      clearTimeout(timeoutIdRef.current);
-      timeoutIdRef.current = null;
+  }, [location.state, setSourceFilter]);
+
+  // Scroll to bottom on initial mount and when messages change
+  useEffect(() => {
+    if (scrollContainerRef.current && messages.length > 0) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (scrollContainerRef.current && messages.length > 0) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
   }, []);
 
-  useEffect(() => {
-    return () => {
-      clearTimers();
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [clearTimers]);
-
-  const handleStop = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    clearTimers();
-    setIsLoading(false);
-    // Remove the loading message if aborted
-    setMessages((prev) => prev.filter((m) => !m.isLoading));
-  }, [clearTimers]);
-
-  const handleSendQuestion = async (questionToSend: string) => {
-    const q = questionToSend.trim();
-    if (!q || isLoading) return;
-
-    setInputQuestion('');
-    setErrorMessage(null);
-    setLastQuestion(q);
-    setIsLoading(true);
-    setElapsedSeconds(0);
-
-    const messageId = `msg-${Date.now()}`;
-    const loadingMessage: ChatMessage = {
-      id: messageId,
-      question: q,
-      isLoading: true,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, loadingMessage]);
-
-    // Setup elapsed timer
-    const startTime = Date.now();
-    timerIntervalRef.current = window.setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-    }, 1000);
-
-    // Setup 130s abort timeout
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    timeoutIdRef.current = window.setTimeout(() => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      clearTimers();
-      setIsLoading(false);
-      setMessages((prev) => prev.filter((m) => m.id !== messageId));
-      setErrorMessage('The AI service took too long. Please try again.');
-    }, TIMEOUT_SECONDS * 1000);
-
-    try {
-      const response = await api.ask({ question: q, top_k: 5 }, controller.signal);
-      const latencyMs = Date.now() - startTime;
-
-      clearTimers();
-      setIsLoading(false);
-
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === messageId
-            ? {
-                ...m,
-                isLoading: false,
-                response,
-                latencyMs,
-              }
-            : m
-        )
-      );
-    } catch (err: unknown) {
-      clearTimers();
-      setIsLoading(false);
-      setMessages((prev) => prev.filter((m) => m.id !== messageId));
-
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        // Handled by stop/timeout
-        return;
-      }
-
-      if (err instanceof ApiClientError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Cannot reach the VaultRAG server. Is the backend running?');
-      }
-    }
-  };
-
-  const handleRetry = () => {
-    if (lastQuestion) {
-      handleSendQuestion(lastQuestion);
-    }
-  };
-
-  const handleNewChat = () => {
-    handleStop();
-    setMessages([]);
-    setSelectedCitation(null);
-    setErrorMessage(null);
-  };
+  // Find citations array from the message that contains the selected citation
+  const activeMessage = messages.find((m) =>
+    m.response?.citations.some(
+      (c) => c.id === selectedCitation?.id && c.chunk_id === selectedCitation?.chunk_id
+    )
+  );
+  const activeCitations = activeMessage?.response?.citations || (selectedCitation ? [selectedCitation] : []);
+  const activeIndex = selectedCitation
+    ? activeCitations.findIndex(
+        (c) => c.id === selectedCitation.id && c.chunk_id === selectedCitation.chunk_id
+      )
+    : -1;
 
   return (
     <div className="flex h-full w-full overflow-hidden relative">
       {/* Conversation column (max width 760px, centred) */}
-      <div className="flex flex-1 flex-col h-full overflow-hidden items-center">
+      <div className="flex flex-1 flex-col h-full overflow-hidden items-center min-w-0">
         {/* Top Chat Bar with New Chat button */}
         <div className="w-full border-b border-border-subtle bg-surface px-4 py-2 flex items-center justify-between text-xs text-text-muted shrink-0">
           <span className="font-medium text-text">Session Workspace</span>
@@ -163,7 +88,7 @@ export const ChatPage: React.FC = () => {
         </div>
 
         {/* Scrollable Messages Area */}
-        <div className="flex-1 w-full max-w-[760px] overflow-y-auto px-4 py-6">
+        <div ref={scrollContainerRef} className="flex-1 w-full max-w-[760px] overflow-y-auto px-4 py-6">
           {messages.length === 0 ? (
             <EmptyState onSelectQuestion={handleSendQuestion} />
           ) : (
@@ -185,10 +110,35 @@ export const ChatPage: React.FC = () => {
               />
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Composer fixed at bottom */}
-        <div className="w-full max-w-[760px] p-4 bg-background shrink-0">
+        <div className="w-full max-w-[760px] p-4 bg-background shrink-0 space-y-2">
+          {/* Removable source filter chip */}
+          {sourceFilter && (
+            <div
+              className="flex items-center justify-between gap-2 px-3 py-1.5 bg-surface border border-accent/40 rounded-btn text-xs shadow-xs"
+              role="status"
+              aria-live="polite"
+              data-testid="source-filter-chip"
+            >
+              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <span className="text-text-muted shrink-0">Asking only about:</span>
+                <span className="font-semibold text-accent truncate">{sourceFilter.filename}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSourceFilter(null)}
+                className="p-1 rounded text-text-muted hover:text-text hover:bg-surface-raised transition-colors shrink-0"
+                aria-label="Remove document filter"
+                data-testid="remove-source-filter-button"
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+
           <Composer
             value={inputQuestion}
             onChange={setInputQuestion}
@@ -203,6 +153,10 @@ export const ChatPage: React.FC = () => {
       {selectedCitation && (
         <CitationPanel
           citation={selectedCitation}
+          citations={activeCitations}
+          currentIndex={activeIndex >= 0 ? activeIndex : 0}
+          onNavigate={(cit) => setSelectedCitation(cit)}
+          siblingCitations={activeCitations.filter((c) => c.id !== selectedCitation.id)}
           onClose={() => setSelectedCitation(null)}
         />
       )}

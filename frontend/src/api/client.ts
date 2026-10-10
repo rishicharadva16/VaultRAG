@@ -504,4 +504,11 @@ export const api = {
       requiresAuth: true,
     });
   },
+
+  deleteAdminUser: async (userId: string): Promise<void> => {
+    return request<void>(`/admin/users/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+      requiresAuth: true,
+    });
+  },
 };
