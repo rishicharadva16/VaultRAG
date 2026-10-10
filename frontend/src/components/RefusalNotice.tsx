@@ -9,7 +9,7 @@ interface RefusalNoticeProps {
 export const RefusalNotice: React.FC<RefusalNoticeProps> = ({ answer, className = '' }) => {
   return (
     <div
-      className={`rounded-card border border-border bg-surface-raised p-4 transition-colors ${className}`}
+      className={`rounded-2xl border border-border bg-surface-raised p-4 transition-colors shadow-sm ${className}`}
       data-testid="refusal-notice"
     >
       <div className="flex items-start gap-3">

@@ -42,7 +42,7 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({
 
   return (
     <article
-      className={`rounded-card border border-border bg-surface p-4 transition-colors space-y-4 shadow-xs ${className}`}
+      className={`rounded-2xl border border-border bg-surface p-4 transition-colors space-y-4 shadow-sm ${className}`}
       data-testid="answer-card"
     >
       {/* Top Header: Verification & Meta */}
@@ -50,7 +50,7 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({
         <div className="flex items-center gap-2">
           {response.verified ? (
             <span
-              className="inline-flex items-center gap-1.5 rounded-badge border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
               data-testid="verified-badge"
             >
               <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
@@ -61,10 +61,10 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-text-muted">
+        <div className="flex items-center gap-2.5 text-xs text-text-muted">
           {latencyMs !== undefined && (
-            <span className="flex items-center gap-1">
-              <Clock size={12} aria-hidden="true" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-raised border border-border text-[11px] font-medium text-text-muted">
+              <Clock size={11} aria-hidden="true" />
               <span>{formatLatency(latencyMs)}</span>
             </span>
           )}
@@ -72,12 +72,12 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({
             type="button"
             onClick={handleCopy}
             aria-label="Copy plain answer text"
-            className="flex items-center gap-1 rounded-btn px-2 py-1 text-xs font-medium text-text-muted hover:bg-surface-raised hover:text-text transition-colors"
+            className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-text-muted hover:bg-surface-raised hover:text-text transition-colors min-h-[32px] sm:min-h-[36px]"
           >
             {copied ? (
               <>
                 <Check size={13} className="text-success" aria-hidden="true" />
-                <span className="text-success">Copied</span>
+                <span className="text-success font-medium">Copied</span>
               </>
             ) : (
               <>
