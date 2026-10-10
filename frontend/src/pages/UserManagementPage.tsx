@@ -3,15 +3,9 @@ import { api, ApiClientError } from '../api/client';
 import { AdminUser, CreateAdminUserPayload, PatchAdminUserPayload } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { NotFoundPage } from './NotFoundPage';
+import { DepartmentBadge } from '../components/DepartmentBadge';
 import { Skeleton } from '../components/Skeleton';
 import { ErrorBanner } from '../components/ErrorBanner';
-import {
-  PageHeader,
-  StatCard,
-  StatusPill,
-  Badge,
-  Button,
-} from '../components/ui';
 import {
   Users,
   UserPlus,
@@ -22,12 +16,13 @@ import {
   UserX,
   UserCheck,
   CheckCircle2,
+  XCircle,
   Eye,
   EyeOff,
   AlertCircle,
+  Loader2,
   X,
   RotateCcw,
-  Building2,
 } from 'lucide-react';
 
 const STANDARD_DEPARTMENTS = ['Engineering', 'Finance', 'HR', 'Sales'];
@@ -455,19 +450,23 @@ export const UserManagementPage: React.FC = () => {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-dialog border border-border bg-surface/95 backdrop-blur-md px-4 py-3 text-xs sm:text-sm text-text shadow-xl animate-scale-in"
+          className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-card border px-4 py-3 text-sm shadow-raised animate-in slide-in-from-bottom duration-200 ${
+            toast.type === 'success'
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/80 dark:text-emerald-200'
+              : 'border-red-300 bg-red-50 text-red-900 dark:border-red-900/60 dark:bg-red-950/80 dark:text-red-200'
+          }`}
         >
           {toast.type === 'success' ? (
             <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
           ) : (
             <AlertCircle size={18} className="text-danger shrink-0" aria-hidden="true" />
           )}
-          <span className="font-semibold">{toast.message}</span>
+          <span className="font-medium">{toast.message}</span>
           <button
             type="button"
             onClick={() => setToast(null)}
             aria-label="Dismiss notification"
-            className="ml-2 text-text-muted hover:text-text rounded-btn p-1"
+            className="ml-2 text-text-muted hover:text-text rounded p-0.5"
           >
             <X size={15} aria-hidden="true" />
           </button>
@@ -476,49 +475,29 @@ export const UserManagementPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
-        <PageHeader
-          title="User Management"
-          subtitle={isLoading ? 'Loading users...' : `${users.length} total ${users.length === 1 ? 'user' : 'users'} registered`}
-          actions={
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={openAddModal}
-              leadingIcon={<UserPlus size={16} aria-hidden="true" />}
-              data-testid="add-user-button"
-              aria-label="Add new user"
-            >
-              Add user
-            </Button>
-          }
-        />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border-subtle pb-5">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-contrast shadow-xs">
+                <Users size={20} aria-hidden="true" />
+              </div>
+              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-text">User Management</h1>
+            </div>
+            <p className="mt-1 text-xs md:text-sm text-text-muted">
+              {isLoading ? 'Loading users...' : `${users.length} total ${users.length === 1 ? 'user' : 'users'} registered`}
+            </p>
+          </div>
 
-        {/* 4 StatCards Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <StatCard
-            label="Total Users"
-            value={users.length}
-            icon={<Users size={18} />}
-            iconBg="bg-primary-soft text-primary"
-          />
-          <StatCard
-            label="Active Accounts"
-            value={users.filter((u) => u.is_active).length}
-            icon={<UserCheck size={18} />}
-            iconBg="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          />
-          <StatCard
-            label="Inactive Accounts"
-            value={users.filter((u) => !u.is_active).length}
-            icon={<UserX size={18} />}
-            iconBg="bg-slate-500/10 text-slate-600 dark:text-slate-400"
-          />
-          <StatCard
-            label="Departments"
-            value={new Set(users.map((u) => u.department).filter(Boolean)).size || STANDARD_DEPARTMENTS.length}
-            icon={<Building2 size={18} />}
-            iconBg="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
-          />
+          <button
+            type="button"
+            onClick={openAddModal}
+            className="inline-flex items-center justify-center gap-2 rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-accent-contrast shadow-xs hover:bg-accent-hover transition-colors min-h-[40px] focus-visible:ring-2 focus-visible:ring-accent"
+            data-testid="add-user-button"
+            aria-label="Add new user"
+          >
+            <UserPlus size={16} aria-hidden="true" />
+            <span>Add user</span>
+          </button>
         </div>
 
         {/* Search & Filters Bar */}
@@ -680,14 +659,14 @@ export const UserManagementPage: React.FC = () => {
                       return (
                         <tr
                           key={u.id}
-                          className="hover:bg-surface-2/60 transition-colors"
+                          className="hover:bg-surface-raised/50 transition-colors"
                           data-testid={`user-row-${u.id}`}
                         >
                           {/* Name + Email + Avatar */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
                               <div
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-accent-contrast text-xs shadow-xs"
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-raised border border-border font-semibold text-text text-xs"
                                 aria-hidden="true"
                               >
                                 {getInitials(u.name, u.email)}
@@ -713,7 +692,7 @@ export const UserManagementPage: React.FC = () => {
 
                           {/* Department */}
                           <td className="py-3.5 px-3 whitespace-nowrap">
-                            <Badge department={u.department} isAdmin={u.is_admin} size="sm" />
+                            <DepartmentBadge department={u.department} isAdmin={u.is_admin} size="sm" />
                           </td>
 
                           {/* Employee ID */}
@@ -723,10 +702,23 @@ export const UserManagementPage: React.FC = () => {
 
                           {/* Status Pill (Never shown by color alone) */}
                           <td className="py-3.5 px-3 whitespace-nowrap">
-                            <StatusPill
-                              status={u.is_active ? 'active' : 'inactive'}
-                              testId={`user-status-${u.id}`}
-                            />
+                            {u.is_active ? (
+                              <span
+                                className="inline-flex items-center gap-1 rounded-badge bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+                                data-testid={`user-status-${u.id}`}
+                              >
+                                <CheckCircle2 size={13} aria-hidden="true" />
+                                <span>Active</span>
+                              </span>
+                            ) : (
+                              <span
+                                className="inline-flex items-center gap-1 rounded-badge bg-slate-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:text-slate-400 border border-slate-500/20"
+                                data-testid={`user-status-${u.id}`}
+                              >
+                                <XCircle size={13} aria-hidden="true" />
+                                <span>Inactive</span>
+                              </span>
+                            )}
                           </td>
 
                           {/* Actions Menu */}
@@ -830,7 +822,7 @@ export const UserManagementPage: React.FC = () => {
                     <div className="flex items-start justify-between gap-2 min-w-0">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-accent-contrast text-xs shadow-xs"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised border border-border font-semibold text-text text-xs"
                           aria-hidden="true"
                         >
                           {getInitials(u.name, u.email)}
@@ -863,7 +855,7 @@ export const UserManagementPage: React.FC = () => {
                           }}
                           aria-label={`Actions for user ${u.name}`}
                           aria-expanded={menuOpen}
-                          className="flex h-10 w-10 items-center justify-center rounded-btn text-text-muted hover:bg-surface-2 hover:text-text transition-colors"
+                          className="flex h-10 w-10 items-center justify-center rounded-btn text-text-muted hover:bg-surface-raised hover:text-text transition-colors"
                         >
                           <MoreVertical size={18} aria-hidden="true" />
                         </button>
@@ -928,7 +920,7 @@ export const UserManagementPage: React.FC = () => {
                     {/* Middle Info: Department & Emp ID */}
                     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-2.5 text-xs text-text-muted">
                       <div>
-                        <Badge department={u.department} isAdmin={u.is_admin} size="sm" />
+                        <DepartmentBadge department={u.department} isAdmin={u.is_admin} size="sm" />
                       </div>
                       <div className="font-mono text-[11px]">
                         ID: {u.employee_id || '—'}
@@ -938,7 +930,17 @@ export const UserManagementPage: React.FC = () => {
                     {/* Bottom Status Pill */}
                     <div className="flex items-center justify-between border-t border-border-subtle pt-2 text-xs">
                       <span className="text-text-muted">Account Status:</span>
-                      <StatusPill status={u.is_active ? 'active' : 'inactive'} />
+                      {u.is_active ? (
+                        <span className="inline-flex items-center gap-1 rounded-badge bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                          <CheckCircle2 size={12} aria-hidden="true" />
+                          <span>Active</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-badge bg-slate-500/10 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:text-slate-400 border border-slate-500/20">
+                          <XCircle size={12} aria-hidden="true" />
+                          <span>Inactive</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
@@ -948,21 +950,21 @@ export const UserManagementPage: React.FC = () => {
         )}
       </div>
 
-      {/* ── ADD USER DIALOG ── */}
+      {/* ── ADD USER DIALOG (Full-screen sheet on mobile) ── */}
       {isAddOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto animate-scale-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-background md:bg-black/50 md:backdrop-blur-xs overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="add-user-title"
         >
-          <div className="relative flex w-full max-w-lg flex-col rounded-dialog border border-border bg-surface p-6 shadow-xl">
-            <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-soft text-primary shadow-xs">
+          <div className="relative flex h-full md:h-auto w-full md:max-w-md flex-col rounded-none md:rounded-card border-0 md:border md:border-border bg-surface p-6 shadow-panel">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-contrast">
                   <UserPlus size={18} aria-hidden="true" />
                 </div>
-                <h2 id="add-user-title" className="font-heading text-base font-bold text-text">
+                <h2 id="add-user-title" className="text-base font-bold text-text">
                   Add New User
                 </h2>
               </div>
@@ -971,7 +973,7 @@ export const UserManagementPage: React.FC = () => {
                 onClick={closeAddModal}
                 disabled={isAdding}
                 aria-label="Close dialog"
-                className="rounded-btn p-1.5 text-text-muted hover:bg-surface-2 hover:text-text transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                className="rounded-btn p-1.5 text-text-muted hover:bg-surface-raised hover:text-text transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               >
                 <X size={18} aria-hidden="true" />
               </button>
@@ -980,7 +982,7 @@ export const UserManagementPage: React.FC = () => {
             {addError && (
               <div
                 role="alert"
-                className="mb-4 flex items-start gap-2 rounded-btn border border-danger/30 bg-danger/10 p-3 text-xs text-danger"
+                className="mb-4 flex items-start gap-2 rounded-card border border-red-300 bg-red-50 p-3 text-xs text-red-900 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
               >
                 <AlertCircle size={15} className="text-danger shrink-0 mt-0.5" aria-hidden="true" />
                 <div className="leading-relaxed">{addError}</div>
@@ -1001,7 +1003,7 @@ export const UserManagementPage: React.FC = () => {
                     value={addName}
                     onChange={(e) => setAddName(e.target.value)}
                     placeholder="e.g. Rahul Sharma"
-                    className="w-full rounded-btn border border-border bg-surface-2 py-2 px-3 text-sm text-text focus:border-primary focus:outline-hidden min-h-[40px]"
+                    className="w-full rounded-input border border-border bg-background py-2 px-3 text-sm text-text focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[40px]"
                   />
                 </div>
 
@@ -1017,7 +1019,7 @@ export const UserManagementPage: React.FC = () => {
                     value={addEmail}
                     onChange={(e) => setAddEmail(e.target.value)}
                     placeholder="name@northwind.example"
-                    className="w-full rounded-btn border border-border bg-surface-2 py-2 px-3 text-sm text-text focus:border-primary focus:outline-hidden min-h-[40px]"
+                    className="w-full rounded-input border border-border bg-background py-2 px-3 text-sm text-text focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[40px]"
                   />
                 </div>
 
@@ -1030,7 +1032,7 @@ export const UserManagementPage: React.FC = () => {
                     id="add-department"
                     value={addDept}
                     onChange={(e) => setAddDept(e.target.value)}
-                    className="w-full rounded-btn border border-border bg-surface-2 py-2 px-3 text-sm text-text focus:border-primary focus:outline-hidden min-h-[40px]"
+                    className="w-full rounded-input border border-border bg-background py-2 px-3 text-sm text-text focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[40px]"
                   >
                     <option value="">None / Unassigned</option>
                     {allDepartments.map((d) => (
@@ -1052,7 +1054,7 @@ export const UserManagementPage: React.FC = () => {
                     value={addEmpId}
                     onChange={(e) => setAddEmpId(e.target.value)}
                     placeholder="e.g. EMP009"
-                    className="w-full rounded-btn border border-border bg-surface-2 py-2 px-3 text-sm text-text focus:border-primary focus:outline-hidden min-h-[40px]"
+                    className="w-full rounded-input border border-border bg-background py-2 px-3 text-sm text-text focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[40px]"
                   />
                 </div>
 
@@ -1070,7 +1072,7 @@ export const UserManagementPage: React.FC = () => {
                       value={addPassword}
                       onChange={(e) => setAddPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full rounded-btn border border-border bg-surface-2 py-2 pl-3 pr-10 text-sm text-text focus:border-primary focus:outline-hidden min-h-[40px]"
+                      className="w-full rounded-input border border-border bg-background py-2 pl-3 pr-10 text-sm text-text focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[40px]"
                       autoComplete="new-password"
                     />
                     <button
@@ -1086,46 +1088,51 @@ export const UserManagementPage: React.FC = () => {
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-6">
-                <Button
-                  variant="secondary"
-                  size="sm"
+              <div className="flex items-center justify-end gap-3 pt-6 border-t border-border-subtle mt-6">
+                <button
+                  type="button"
                   onClick={closeAddModal}
                   disabled={isAdding}
+                  className="rounded-btn border border-border bg-surface-raised px-4 py-2 text-sm font-semibold text-text hover:bg-border transition-colors min-h-[40px]"
                 >
                   Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
+                </button>
+                <button
                   type="submit"
                   disabled={isAdding}
-                  loading={isAdding}
+                  className="inline-flex items-center justify-center gap-2 rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-accent-contrast shadow-xs hover:bg-accent-hover disabled:opacity-50 transition-colors min-h-[40px] focus-visible:ring-2 focus-visible:ring-accent"
                   data-testid="submit-add-user"
                 >
-                  Create User
-                </Button>
+                  {isAdding ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <span>Create User</span>
+                  )}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ── EDIT USER DIALOG ── */}
+      {/* ── EDIT USER DIALOG (Full-screen sheet on mobile) ── */}
       {editingUser && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-md overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-background md:bg-black/50 md:backdrop-blur-xs overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="edit-user-title"
         >
-          <div className="relative flex w-full max-w-lg flex-col rounded-dialog border border-border bg-surface p-6 shadow-xl">
-            <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-soft text-primary shadow-xs">
+          <div className="relative flex h-full md:h-auto w-full md:max-w-md flex-col rounded-none md:rounded-card border-0 md:border md:border-border bg-surface p-6 shadow-panel">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-contrast">
                   <Edit2 size={18} aria-hidden="true" />
                 </div>
-                <h2 id="edit-user-title" className="font-heading text-base font-bold text-text">
+                <h2 id="edit-user-title" className="text-base font-bold text-text">
                   Edit User
                 </h2>
               </div>
@@ -1134,7 +1141,7 @@ export const UserManagementPage: React.FC = () => {
                 onClick={closeEditModal}
                 disabled={isEditing}
                 aria-label="Close dialog"
-                className="rounded-btn p-1.5 text-text-muted hover:bg-surface-2 hover:text-text transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                className="rounded-btn p-1.5 text-text-muted hover:bg-surface-raised hover:text-text transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               >
                 <X size={18} aria-hidden="true" />
               </button>
@@ -1143,7 +1150,7 @@ export const UserManagementPage: React.FC = () => {
             {editError && (
               <div
                 role="alert"
-                className="mb-4 flex items-start gap-2 rounded-btn border border-danger/30 bg-danger/10 p-3 text-xs text-danger"
+                className="mb-4 flex items-start gap-2 rounded-card border border-red-300 bg-red-50 p-3 text-xs text-red-900 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
               >
                 <AlertCircle size={15} className="text-danger shrink-0 mt-0.5" aria-hidden="true" />
                 <div className="leading-relaxed">{editError}</div>
@@ -1155,7 +1162,7 @@ export const UserManagementPage: React.FC = () => {
                 {/* Email (Readonly reference) */}
                 <div>
                   <label className="block text-xs font-semibold text-text-muted mb-1">Email</label>
-                  <div className="rounded-btn border border-border bg-surface-2/60 py-2 px-3 text-sm text-text-muted">
+                  <div className="rounded-input border border-border-subtle bg-surface-raised py-2 px-3 text-sm text-text-muted">
                     {editingUser.email}
                   </div>
                 </div>
@@ -1171,7 +1178,7 @@ export const UserManagementPage: React.FC = () => {
                     required
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full rounded-btn border border-border bg-surface-2 py-2 px-3 text-sm text-text focus:border-primary focus:outline-hidden min-h-[40px]"
+                    className="w-full rounded-input border border-border bg-background py-2 px-3 text-sm text-text focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[40px]"
                   />
                 </div>
 
@@ -1184,7 +1191,7 @@ export const UserManagementPage: React.FC = () => {
                     id="edit-department"
                     value={editDept}
                     onChange={(e) => setEditDept(e.target.value)}
-                    className="w-full rounded-btn border border-border bg-surface-2 py-2 px-3 text-sm text-text focus:border-primary focus:outline-hidden min-h-[40px]"
+                    className="w-full rounded-input border border-border bg-background py-2 px-3 text-sm text-text focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[40px]"
                   >
                     <option value="">None / Unassigned</option>
                     {allDepartments.map((d) => (
@@ -1197,10 +1204,10 @@ export const UserManagementPage: React.FC = () => {
 
                 {/* Active Toggle */}
                 <div>
-                  <div className="flex items-center justify-between rounded-btn border border-border p-3.5 bg-surface-2/50">
+                  <div className="flex items-center justify-between rounded-card border border-border p-3 bg-background">
                     <div>
                       <div className="text-sm font-semibold text-text">Account Active</div>
-                      <div className="text-xs text-text-muted mt-0.5">
+                      <div className="text-xs text-text-muted">
                         {editIsActive ? 'User can log in and query documents' : 'User access is blocked'}
                       </div>
                     </div>
@@ -1223,7 +1230,7 @@ export const UserManagementPage: React.FC = () => {
                         className="sr-only peer"
                         aria-label="Account active toggle"
                       />
-                      <div className="w-11 h-6 bg-border peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      <div className="w-11 h-6 bg-border peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:width-5 after:transition-all peer-checked:bg-accent"></div>
                     </label>
                   </div>
                 </div>
@@ -1240,7 +1247,7 @@ export const UserManagementPage: React.FC = () => {
                       value={editPassword}
                       onChange={(e) => setEditPassword(e.target.value)}
                       placeholder="Leave blank to keep existing password"
-                      className="w-full rounded-btn border border-border bg-surface-2 py-2 pl-3 pr-10 text-sm text-text focus:border-primary focus:outline-hidden min-h-[40px]"
+                      className="w-full rounded-input border border-border bg-background py-2 pl-3 pr-10 text-sm text-text focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[40px]"
                       autoComplete="new-password"
                     />
                     <button
@@ -1256,25 +1263,30 @@ export const UserManagementPage: React.FC = () => {
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-6">
-                <Button
-                  variant="secondary"
-                  size="sm"
+              <div className="flex items-center justify-end gap-3 pt-6 border-t border-border-subtle mt-6">
+                <button
+                  type="button"
                   onClick={closeEditModal}
                   disabled={isEditing}
+                  className="rounded-btn border border-border bg-surface-raised px-4 py-2 text-sm font-semibold text-text hover:bg-border transition-colors min-h-[40px]"
                 >
                   Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
+                </button>
+                <button
                   type="submit"
                   disabled={isEditing}
-                  loading={isEditing}
+                  className="inline-flex items-center justify-center gap-2 rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-accent-contrast shadow-xs hover:bg-accent-hover disabled:opacity-50 transition-colors min-h-[40px] focus-visible:ring-2 focus-visible:ring-accent"
                   data-testid="submit-edit-user"
                 >
-                  Save Changes
-                </Button>
+                  {isEditing ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
+                </button>
               </div>
             </form>
           </div>
@@ -1284,45 +1296,45 @@ export const UserManagementPage: React.FC = () => {
       {/* ── DEACTIVATION CONFIRMATION DIALOG ── */}
       {deactivatingUser && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
           role="dialog"
           aria-modal="true"
           aria-labelledby="deactivate-confirm-title"
         >
-          <div className="relative w-full max-w-md rounded-dialog border border-border bg-surface p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+          <div className="relative w-full max-w-sm rounded-card border border-border bg-surface p-6 shadow-panel space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-danger/10 text-danger shrink-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60 text-danger shrink-0">
                 <UserX size={20} aria-hidden="true" />
               </div>
               <div>
-                <h2 id="deactivate-confirm-title" className="font-heading text-base font-bold text-text">
+                <h2 id="deactivate-confirm-title" className="text-base font-bold text-text">
                   Deactivate User
                 </h2>
-                <p className="text-xs text-text-muted">Revoke access to VaultRAG</p>
+                <p className="text-xs text-text-muted">Are you sure you want to deactivate?</p>
               </div>
             </div>
 
-            <p className="text-sm text-text-muted leading-relaxed">
+            <p className="text-xs md:text-sm text-text leading-relaxed">
               Deactivating <strong className="font-semibold text-text">{deactivatingUser.name}</strong> ({deactivatingUser.email}) will immediately revoke their access to VaultRAG. They will not be able to sign in until reactivated.
             </p>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-              <Button
-                variant="secondary"
-                size="sm"
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border-subtle">
+              <button
+                type="button"
                 onClick={() => setDeactivatingUser(null)}
+                className="rounded-btn border border-border bg-surface-raised px-3.5 py-2 text-xs font-semibold text-text hover:bg-border transition-colors min-h-[40px]"
               >
                 Cancel
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
+              </button>
+              <button
+                type="button"
                 onClick={confirmDeactivateUser}
+                className="inline-flex items-center justify-center gap-1.5 rounded-btn bg-danger px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-red-700 transition-colors min-h-[40px] focus-visible:ring-2 focus-visible:ring-danger"
                 data-testid="confirm-deactivate-user"
               >
                 <UserX size={14} aria-hidden="true" />
                 <span>Deactivate user</span>
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -1331,18 +1343,18 @@ export const UserManagementPage: React.FC = () => {
       {/* ── RESET PASSWORD MODAL ── */}
       {resetPasswordUser && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-md overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-background md:bg-black/50 md:backdrop-blur-xs overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="reset-password-title"
         >
-          <div className="relative flex w-full max-w-md flex-col rounded-dialog border border-border bg-surface p-6 shadow-xl">
-            <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-soft text-primary shadow-xs">
+          <div className="relative flex h-full md:h-auto w-full md:max-w-md flex-col rounded-none md:rounded-card border-0 md:border md:border-border bg-surface p-6 shadow-panel">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-contrast">
                   <Key size={18} aria-hidden="true" />
                 </div>
-                <h2 id="reset-password-title" className="font-heading text-base font-bold text-text">
+                <h2 id="reset-password-title" className="text-base font-bold text-text">
                   Reset Password
                 </h2>
               </div>
@@ -1351,7 +1363,7 @@ export const UserManagementPage: React.FC = () => {
                 onClick={closeResetModal}
                 disabled={isResetting}
                 aria-label="Close dialog"
-                className="rounded-btn p-1.5 text-text-muted hover:bg-surface-2 hover:text-text transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                className="rounded-btn p-1.5 text-text-muted hover:bg-surface-raised hover:text-text transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               >
                 <X size={18} aria-hidden="true" />
               </button>
@@ -1364,7 +1376,7 @@ export const UserManagementPage: React.FC = () => {
             {resetError && (
               <div
                 role="alert"
-                className="mb-4 flex items-start gap-2 rounded-btn border border-danger/30 bg-danger/10 p-3 text-xs text-danger"
+                className="mb-4 flex items-start gap-2 rounded-card border border-red-300 bg-red-50 p-3 text-xs text-red-900 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
               >
                 <AlertCircle size={15} className="text-danger shrink-0 mt-0.5" aria-hidden="true" />
                 <div className="leading-relaxed">{resetError}</div>
@@ -1385,7 +1397,7 @@ export const UserManagementPage: React.FC = () => {
                     value={resetPassword}
                     onChange={(e) => setResetPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full rounded-btn border border-border bg-surface-2 py-2 pl-3 pr-10 text-sm text-text focus:border-primary focus:outline-hidden min-h-[40px]"
+                    className="w-full rounded-input border border-border bg-background py-2 pl-3 pr-10 text-sm text-text focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[40px]"
                     autoComplete="new-password"
                   />
                   <button
@@ -1399,25 +1411,30 @@ export const UserManagementPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-6">
-                <Button
-                  variant="secondary"
-                  size="sm"
+              <div className="flex items-center justify-end gap-3 pt-6 border-t border-border-subtle mt-6">
+                <button
+                  type="button"
                   onClick={closeResetModal}
                   disabled={isResetting}
+                  className="rounded-btn border border-border bg-surface-raised px-4 py-2 text-sm font-semibold text-text hover:bg-border transition-colors min-h-[40px]"
                 >
                   Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
+                </button>
+                <button
                   type="submit"
                   disabled={isResetting}
-                  loading={isResetting}
+                  className="inline-flex items-center justify-center gap-2 rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-accent-contrast shadow-xs hover:bg-accent-hover disabled:opacity-50 transition-colors min-h-[40px] focus-visible:ring-2 focus-visible:ring-accent"
                   data-testid="submit-reset-password"
                 >
-                  Update Password
-                </Button>
+                  {isResetting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                      <span>Resetting...</span>
+                    </>
+                  ) : (
+                    <span>Update Password</span>
+                  )}
+                </button>
               </div>
             </form>
           </div>

@@ -6,7 +6,6 @@ import {
   GranteeType,
   SharingTargetUser,
 } from '../api/types';
-import { SegmentedControl, Button } from './ui';
 import {
   X,
   User,
@@ -18,14 +17,6 @@ import {
   AlertCircle,
   ShieldAlert,
 } from 'lucide-react';
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
 
 interface ShareDialogProps {
   document: DocumentItem;
@@ -225,7 +216,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-scale-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="share-dialog-title"
@@ -233,12 +224,12 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     >
       <div
         ref={dialogRef}
-        className="flex flex-col w-full max-w-lg max-h-[90vh] bg-surface rounded-dialog border border-border shadow-xl overflow-hidden"
+        className="flex flex-col w-full max-w-lg max-h-[90vh] bg-surface rounded-card border border-border shadow-raised overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
-            <h2 id="share-dialog-title" className="font-heading text-base font-bold text-text">
+            <h2 id="share-dialog-title" className="text-base font-semibold text-text">
               Share Document
             </h2>
             <p className="text-xs text-text-muted mt-0.5 truncate max-w-sm">
@@ -249,25 +240,25 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close share dialog"
-            className="rounded-btn p-1.5 text-text-muted hover:bg-surface-2 hover:text-text transition-colors"
+            className="rounded-btn p-1.5 text-text-muted hover:bg-surface-raised hover:text-text transition-colors"
           >
             <X size={18} aria-hidden="true" />
           </button>
         </div>
 
         {/* Informative Banner */}
-        <div className="bg-primary-soft/60 border-b border-border-subtle px-6 py-3 text-xs text-primary-text flex items-start gap-2.5">
-          <ShieldAlert size={16} className="text-primary shrink-0 mt-0.5" aria-hidden="true" />
-          <span className="leading-relaxed">
+        <div className="bg-surface-raised/70 border-b border-border-subtle px-5 py-3 text-xs text-text-muted flex items-start gap-2">
+          <ShieldAlert size={15} className="text-accent shrink-0 mt-0.5" aria-hidden="true" />
+          <span>
             Only you and platform administrators can see this document until you share it.
           </span>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {shareError && (
             <div
-              className="flex items-center gap-2 rounded-btn bg-rose-500/10 p-3 text-xs text-danger border border-danger/30"
+              className="flex items-center gap-2 rounded-btn bg-red-50 p-3 text-xs text-danger dark:bg-red-950/40 border border-red-200 dark:border-red-900"
               role="alert"
               data-testid="share-error-message"
             >
@@ -278,7 +269,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
           {statusMessage && (
             <div
-              className="flex items-center gap-2 rounded-btn bg-emerald-500/10 p-2.5 text-xs text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+              className="flex items-center gap-2 rounded-btn bg-emerald-50 p-2.5 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
               role="status"
               aria-live="polite"
               data-testid="share-status-message"
@@ -289,39 +280,53 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
           )}
 
           {/* Add Access Section */}
-          <div className="space-y-3.5">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted">
-                Grant Access
-              </label>
-            </div>
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted">
+              Grant Access
+            </label>
 
             {/* Tab selection: People, Roles, Departments */}
-            <SegmentedControl
-              value={activeTab}
-              onChange={(val) => setActiveTab(val as 'people' | 'roles' | 'departments')}
-              options={[
-                {
-                  value: 'people',
-                  label: 'People',
-                  icon: <User size={13} />,
-                  testId: 'tab-people',
-                },
-                {
-                  value: 'roles',
-                  label: 'Roles',
-                  icon: <Users size={13} />,
-                  testId: 'tab-roles',
-                },
-                {
-                  value: 'departments',
-                  label: 'Departments',
-                  icon: <Building2 size={13} />,
-                  testId: 'tab-departments',
-                },
-              ]}
-              className="w-full justify-between"
-            />
+            <div className="flex border-b border-border">
+              <button
+                type="button"
+                onClick={() => setActiveTab('people')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+                  activeTab === 'people'
+                    ? 'border-accent text-accent'
+                    : 'border-transparent text-text-muted hover:text-text'
+                }`}
+                data-testid="tab-people"
+              >
+                <User size={14} aria-hidden="true" />
+                <span>People</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('roles')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+                  activeTab === 'roles'
+                    ? 'border-accent text-accent'
+                    : 'border-transparent text-text-muted hover:text-text'
+                }`}
+                data-testid="tab-roles"
+              >
+                <Users size={14} aria-hidden="true" />
+                <span>Roles</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('departments')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+                  activeTab === 'departments'
+                    ? 'border-accent text-accent'
+                    : 'border-transparent text-text-muted hover:text-text'
+                }`}
+                data-testid="tab-departments"
+              >
+                <Building2 size={14} aria-hidden="true" />
+                <span>Departments</span>
+              </button>
+            </div>
 
             {/* Tab Content */}
             {activeTab === 'people' && (
@@ -335,13 +340,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                       setSelectedUser(null);
                     }}
                     placeholder="Search people by name..."
-                    className="w-full rounded-btn border border-border bg-surface-2 px-3.5 py-2 text-xs text-text placeholder-text-muted focus:border-primary focus:outline-hidden transition-colors"
+                    className="w-full rounded-btn border border-border bg-background px-3 py-2 text-xs text-text placeholder-text-muted focus:border-accent focus:outline-hidden"
                     data-testid="share-people-search"
                     aria-label="Search people"
                   />
                   {isSearching && (
-                    <div className="absolute right-3.5 top-2.5 text-text-muted">
-                      <Loader2 size={14} className="animate-spin text-accent" />
+                    <div className="absolute right-3 top-2.5 text-text-muted">
+                      <Loader2 size={14} className="animate-spin" />
                     </div>
                   )}
                 </div>
@@ -349,7 +354,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 {/* Autocomplete Results */}
                 {searchQuery.length >= 2 && targetUsers.length > 0 && !selectedUser && (
                   <ul
-                    className="max-h-40 overflow-y-auto rounded-card border border-border bg-surface p-1 shadow-md divide-y divide-border-subtle"
+                    className="max-h-36 overflow-y-auto rounded-card border border-border bg-surface p-1 shadow-xs divide-y divide-border-subtle"
                     role="listbox"
                     aria-label="Matching users"
                     data-testid="people-results-list"
@@ -362,19 +367,12 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                             setSelectedUser(u);
                             setSearchQuery(u.name);
                           }}
-                          className="w-full flex items-center justify-between px-3 py-2 text-left text-xs hover:bg-surface-2 rounded-btn transition-colors"
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 text-left text-xs hover:bg-surface-raised rounded-btn transition-colors"
                           role="option"
                           aria-selected={false}
                         >
-                          <div className="flex items-center gap-2.5 truncate">
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-contrast">
-                              {getInitials(u.name)}
-                            </span>
-                            <span className="font-medium text-text">{u.name}</span>
-                          </div>
-                          <span className="text-[10px] text-text-muted bg-surface-2 px-1.5 py-0.5 rounded border border-border">
-                            {u.department || 'General'}
-                          </span>
+                          <span className="font-medium text-text">{u.name}</span>
+                          <span className="text-[10px] text-text-muted">{u.department || 'General'}</span>
                         </button>
                       </li>
                     ))}
@@ -386,25 +384,17 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 )}
 
                 {selectedUser && (
-                  <div className="flex items-center justify-between p-2.5 rounded-btn bg-primary-soft/40 border border-primary/20 text-xs">
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
-                        {getInitials(selectedUser.name)}
-                      </span>
-                      <span className="font-semibold text-text">
-                        {selectedUser.name}
-                      </span>
-                      <span className="text-text-muted">
-                        ({selectedUser.department || 'General'})
-                      </span>
-                    </div>
+                  <div className="flex items-center justify-between p-2 rounded-btn bg-accent/10 border border-accent/20 text-xs">
+                    <span className="font-medium text-text">
+                      Selected: {selectedUser.name} ({selectedUser.department || 'General'})
+                    </span>
                     <button
                       type="button"
                       onClick={() => {
                         setSelectedUser(null);
                         setSearchQuery('');
                       }}
-                      className="text-text-muted hover:text-text p-1"
+                      className="text-text-muted hover:text-text"
                     >
                       <X size={13} />
                     </button>
@@ -422,7 +412,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                   id="select-role"
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
-                  className="w-full rounded-btn border border-border bg-surface-2 px-3 py-2 text-xs text-text focus:border-primary focus:outline-hidden"
+                  className="w-full rounded-btn border border-border bg-background px-3 py-2 text-xs text-text focus:border-accent focus:outline-hidden"
                   data-testid="share-role-select"
                 >
                   {(availableRoles.length > 0
@@ -446,7 +436,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                   id="select-dept"
                   value={selectedDept}
                   onChange={(e) => setSelectedDept(e.target.value)}
-                  className="w-full rounded-btn border border-border bg-surface-2 px-3 py-2 text-xs text-text focus:border-primary focus:outline-hidden"
+                  className="w-full rounded-btn border border-border bg-background px-3 py-2 text-xs text-text focus:border-accent focus:outline-hidden"
                   data-testid="share-dept-select"
                 >
                   {(availableDepts.length > 0
@@ -469,7 +459,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                     type="checkbox"
                     checked={includeSensitive}
                     onChange={(e) => setIncludeSensitive(e.target.checked)}
-                    className="rounded-xs border-border text-primary focus:ring-primary"
+                    className="rounded-xs border-border text-accent focus:ring-accent"
                     data-testid="share-sensitive-checkbox"
                   />
                   <span>Also share sensitive columns</span>
@@ -480,9 +470,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               </div>
             )}
 
-            <Button
-              variant="primary"
-              size="md"
+            <button
+              type="button"
               onClick={handleAddShare}
               disabled={
                 isSubmitting ||
@@ -490,12 +479,18 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 (activeTab === 'roles' && !selectedRole) ||
                 (activeTab === 'departments' && !selectedDept)
               }
-              loading={isSubmitting}
-              className="w-full"
+              className="w-full rounded-btn bg-accent py-2 px-3 text-xs font-medium text-accent-contrast hover:bg-accent-hover disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
               data-testid="add-share-button"
             >
-              Add Access
-            </Button>
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Granting...</span>
+                </>
+              ) : (
+                <span>Add Access</span>
+              )}
+            </button>
           </div>
 
           {/* Current Access List */}
@@ -506,62 +501,46 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
             {isLoadingShares ? (
               <div className="py-4 text-center text-xs text-text-muted flex items-center justify-center gap-2">
-                <Loader2 size={14} className="animate-spin text-accent" />
+                <Loader2 size={14} className="animate-spin" />
                 <span>Loading shares...</span>
               </div>
             ) : (
               <ul className="space-y-2" data-testid="current-shares-list">
                 {/* Document Owner Row (Always visible, non-removable) */}
-                <li className="flex items-center justify-between p-2.5 rounded-btn bg-surface-2 border border-border-subtle text-xs">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-contrast">
-                      {getInitials(document.owner.name)}
-                    </span>
+                <li className="flex items-center justify-between p-2.5 rounded-btn bg-surface-raised border border-border-subtle text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <User size={15} className="text-accent shrink-0" />
                     <div className="truncate">
-                      <span className="font-semibold text-text">{document.owner.name}</span>
-                      <span className="ml-1.5 text-[10px] text-text-muted font-medium">(Owner)</span>
+                      <span className="font-medium text-text">{document.owner.name}</span>
+                      <span className="ml-1.5 text-[10px] text-text-muted">(Owner)</span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-semibold text-text-muted bg-surface px-2 py-0.5 rounded-badge border border-border">
-                    Owner
-                  </span>
+                  <span className="text-[11px] font-medium text-text-muted">Owner</span>
                 </li>
 
                 {/* Shares */}
                 {shares.map((s) => {
                   let label = s.grantee_value;
-                  let icon = (
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-2 text-text-muted border border-border text-[11px] font-bold">
-                      {getInitials(s.grantee_value)}
-                    </span>
-                  );
+                  let icon = <User size={15} className="text-text-muted shrink-0" />;
                   if (s.grantee_type === 'role') {
                     label = `Role: ${s.grantee_value}`;
-                    icon = (
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                        <Users size={14} />
-                      </span>
-                    );
+                    icon = <Users size={15} className="text-text-muted shrink-0" />;
                   } else if (s.grantee_type === 'department') {
                     label = `Department: ${s.grantee_value}`;
-                    icon = (
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
-                        <Building2 size={14} />
-                      </span>
-                    );
+                    icon = <Building2 size={15} className="text-text-muted shrink-0" />;
                   }
 
                   return (
                     <li
                       key={s.id}
-                      className="flex items-center justify-between p-2.5 rounded-btn bg-surface-2 border border-border-subtle text-xs"
+                      className="flex items-center justify-between p-2.5 rounded-btn bg-surface-raised border border-border-subtle text-xs"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         {icon}
                         <div className="truncate">
                           <span className="font-medium text-text">{label}</span>
                           {s.include_sensitive && (
-                            <span className="ml-1.5 rounded-badge bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 text-[9px] font-semibold border border-amber-500/20">
+                            <span className="ml-1.5 rounded-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1 py-0.5 text-[9px] font-medium">
                               Sensitive included
                             </span>
                           )}
@@ -573,7 +552,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                         onClick={() => handleRemoveShare(s.id)}
                         disabled={removingShareId === s.id}
                         aria-label={`Remove access for ${label}`}
-                        className="rounded-btn p-1.5 text-text-muted hover:text-danger hover:bg-rose-500/10 transition-colors"
+                        className="rounded-btn p-1 text-text-muted hover:text-danger hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
                         data-testid={`remove-share-${s.id}`}
                       >
                         {removingShareId === s.id ? (
@@ -591,10 +570,14 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border px-6 py-3.5 bg-surface-2/60 flex justify-end">
-          <Button variant="secondary" size="sm" onClick={onClose}>
+        <div className="border-t border-border px-5 py-3 bg-surface-raised/40 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-btn border border-border bg-surface px-4 py-1.5 text-xs font-medium text-text hover:bg-border transition-colors"
+          >
             Done
-          </Button>
+          </button>
         </div>
       </div>
     </div>

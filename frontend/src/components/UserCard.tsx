@@ -1,6 +1,6 @@
 import React from 'react';
 import { User } from '../api/types';
-import { Badge } from './ui/Badge';
+import { DepartmentBadge } from './DepartmentBadge';
 
 interface UserCardProps {
   user: User;
@@ -23,28 +23,26 @@ export const UserCard: React.FC<UserCardProps> = ({ user, className = '' }) => {
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-card border border-border bg-surface-raised p-3 transition-colors ${className}`}
+      className={`flex items-start gap-3 rounded-card border border-border bg-surface p-3 transition-colors ${className}`}
       data-testid="user-card"
     >
-      {/* Solid Avatar */}
       <div
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-contrast font-bold text-xs shrink-0 select-none shadow-xs"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-raised font-semibold text-text text-xs border border-border"
         aria-hidden="true"
       >
         {getInitials(user.name, user.email)}
       </div>
-
       <div className="min-w-0 flex-1">
-        <div className="truncate font-semibold text-text text-sm" title={user.name || user.email}>
+        <div className="truncate font-medium text-text text-sm" title={user.name || user.email}>
           {user.name || user.email}
         </div>
         <div className="truncate text-text-muted text-xs" title={user.email}>
           {user.email}
         </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {user.department && <Badge department={user.department} size="sm" />}
-          {isAdmin && <Badge isAdmin={true} size="sm" />}
-          {!user.department && !isAdmin && <Badge department={null} size="sm" />}
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {user.department && <DepartmentBadge department={user.department} size="sm" />}
+          {isAdmin && <DepartmentBadge isAdmin={true} size="sm" />}
+          {!user.department && !isAdmin && <DepartmentBadge department={null} size="sm" />}
         </div>
       </div>
     </div>

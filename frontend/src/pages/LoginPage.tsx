@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { Eye, EyeOff, Lock, Mail, ShieldCheck, Loader2, AlertCircle, Shield, FileCheck2, HardDrive } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
 import { ApiClientError } from '../api/client';
 
 export const LoginPage: React.FC = () => {
@@ -56,229 +56,118 @@ export const LoginPage: React.FC = () => {
   const displayedError = localError || authError;
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen max-h-screen w-full overflow-hidden bg-background text-text select-none">
-      {/* ── Left Panel (Solid primary blue, subtle faint grid/dots, vertically centered) ── */}
-      <div className="bg-[#2563eb] text-white shrink-0 lg:w-1/2 flex flex-col justify-between p-6 sm:p-8 lg:p-12 relative overflow-hidden">
-        {/* Subtle Faint Dot/Grid Pattern at Low Opacity */}
-        <div
-          className="absolute inset-0 opacity-10 pointer-events-none"
-          style={{
-            backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
-          }}
-          aria-hidden="true"
-        />
+    <div className="flex min-h-screen w-full flex-col justify-between bg-background p-4 sm:p-6 text-text">
+      <header className="flex justify-end">
+        <ThemeToggle />
+      </header>
 
-        {/* Top Header: Logo Mark & Wordmark */}
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white shadow-xs">
-              <ShieldCheck size={24} aria-hidden="true" />
+      <main className="mx-auto w-full max-w-md my-auto">
+        <div className="rounded-card border border-border bg-surface p-6 sm:p-8 shadow-raised">
+          {/* VaultRAG Logo & Header */}
+          <div className="text-center mb-6">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-contrast shadow-sm mb-3">
+              <ShieldCheck size={28} aria-hidden="true" />
             </div>
-            <span className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              VaultRAG
-            </span>
-          </div>
-
-          {/* On mobile (< lg), theme toggle in header */}
-          <div className="lg:hidden">
-            <ThemeToggle className="text-white hover:bg-white/15 rounded-btn p-1.5 transition-colors" />
-          </div>
-        </div>
-
-        {/* Center Content: Headline & Trust Points */}
-        <div className="relative z-10 my-auto py-3 lg:py-6 max-w-lg space-y-5 lg:space-y-7">
-          {/* Headline Section */}
-          <div className="space-y-3">
-            <div className="hidden lg:inline-flex items-center gap-2 rounded-badge border border-white/25 bg-white/15 px-3 py-1 text-xs font-semibold text-white">
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              Secure Multi-Modal RAG
-            </div>
-
-            <h1 className="text-xl sm:text-2xl lg:text-[clamp(28px,2.8vw,42px)] font-bold tracking-tight text-white leading-tight">
-              Ask your documents.
-              <br />
-              See only what you are allowed to.
-            </h1>
-
-            <p className="hidden lg:block text-sm text-white/85 leading-relaxed">
-              Enterprise search and question answering with strict role and department access control.
+            <h1 className="text-xl font-bold tracking-tight text-text">Sign in to VaultRAG</h1>
+            <p className="mt-1.5 text-xs text-text-muted">
+              Enter your corporate credentials to access authorized documents.
             </p>
           </div>
 
-          {/* Three Trust Points (Desktop / lg only to keep layout non-scrolling) */}
-          <div className="hidden lg:flex flex-col space-y-4">
-            <div className="flex items-start gap-3.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white">
-                <Shield size={18} aria-hidden="true" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-white">
-                  Access enforced at retrieval, on the server
-                </h2>
-                <p className="text-xs text-white/80 mt-0.5">
-                  Permission tokens filter raw vector embeddings prior to model synthesis.
-                </p>
-              </div>
+          {/* Inline Error Message */}
+          {displayedError && (
+            <div
+              role="alert"
+              className="mb-5 flex items-start gap-2.5 rounded-card border border-red-300 bg-red-50 p-3 text-xs text-red-900 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+              data-testid="login-error"
+            >
+              <AlertCircle size={16} className="shrink-0 text-danger mt-0.5" aria-hidden="true" />
+              <div className="leading-relaxed">{displayedError}</div>
             </div>
+          )}
 
-            <div className="flex items-start gap-3.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white">
-                <FileCheck2 size={18} aria-hidden="true" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-white">
-                  Every answer cited to its exact source
-                </h2>
-                <p className="text-xs text-white/80 mt-0.5">
-                  Auditable highlighted text snippets and verified source bounding boxes.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white">
-                <HardDrive size={18} aria-hidden="true" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-white">
-                  Your documents never leave this machine
-                </h2>
-                <p className="text-xs text-white/80 mt-0.5">
-                  100% on-premises vector database, relational store, and neural runtime.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer (Desktop / lg only) */}
-        <div className="relative z-10 hidden lg:block text-xs text-white/70 font-medium">
-          Secure Multi-Modal RAG with Access Control
-        </div>
-      </div>
-
-      {/* ── Right Sign-in Panel (Same page background as app, centered white card, subtle theme toggle top right) ── */}
-      <div className="flex-1 flex flex-col justify-between p-6 sm:p-8 lg:p-12 relative overflow-y-auto bg-background">
-        {/* Top-Right Theme Toggle on Desktop */}
-        <div className="hidden lg:flex justify-end w-full">
-          <ThemeToggle className="text-text-muted hover:text-text rounded-btn p-1.5 transition-colors" />
-        </div>
-
-        {/* Centered White Card (max-w-[420px], 16px radius, soft shadow) */}
-        <div className="mx-auto w-full max-w-[420px] my-auto">
-          <div className="rounded-card border border-border bg-surface p-7 sm:p-8 shadow-soft">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold tracking-tight text-text">
-                Welcome back
-              </h2>
-              <p className="mt-1 text-sm text-text-muted">
-                Sign in to your workspace
-              </p>
-            </div>
-
-            {/* Inline Error Banner */}
-            {displayedError && (
-              <div
-                role="alert"
-                className="mb-5 flex items-start gap-2.5 rounded-btn border border-danger/30 bg-danger/10 p-3 text-xs text-danger"
-                data-testid="login-error"
-              >
-                <AlertCircle size={16} className="shrink-0 text-danger mt-0.5" aria-hidden="true" />
-                <div className="leading-relaxed font-medium">{displayedError}</div>
-              </div>
-            )}
-
-            {/* Sign-in Form */}
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              <div>
-                <label htmlFor="login-email" className="block text-xs font-semibold text-text mb-1.5">
-                  Email address
-                </label>
-                <div className="relative flex items-center">
-                  <div className="pointer-events-none absolute left-3 flex items-center text-text-muted">
-                    <Mail size={16} aria-hidden="true" />
-                  </div>
-                  <input
-                    id="login-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (localError) setLocalError(null);
-                    }}
-                    disabled={isSubmitting}
-                    required
-                    placeholder="name@northwind.example"
-                    className="w-full rounded-input border border-border bg-surface-raised py-2.5 pl-9 pr-3.5 text-sm text-text placeholder:text-text-muted transition-colors outline-hidden focus:border-accent min-h-[42px]"
-                    autoComplete="email"
-                  />
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            <div>
+              <label htmlFor="login-email" className="block text-xs font-semibold text-text mb-1">
+                Email address
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-text-muted">
+                  <Mail size={16} aria-hidden="true" />
                 </div>
+                <input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (localError) setLocalError(null);
+                  }}
+                  disabled={isSubmitting}
+                  required
+                  placeholder="name@northwind.example"
+                  className="w-full rounded-input border border-border bg-background py-2 pl-9 pr-3 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  autoComplete="email"
+                />
               </div>
-
-              <div>
-                <label htmlFor="login-password" className="block text-xs font-semibold text-text mb-1.5">
-                  Password
-                </label>
-                <div className="relative flex items-center">
-                  <div className="pointer-events-none absolute left-3 flex items-center text-text-muted">
-                    <Lock size={16} aria-hidden="true" />
-                  </div>
-                  <input
-                    id="login-password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (localError) setLocalError(null);
-                    }}
-                    disabled={isSubmitting}
-                    required
-                    placeholder="••••••••••••"
-                    className="w-full rounded-input border border-border bg-surface-raised py-2.5 pl-9 pr-10 text-sm text-text placeholder:text-text-muted transition-colors outline-hidden focus:border-accent min-h-[42px]"
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 flex items-center text-text-muted hover:text-text p-1 rounded"
-                  >
-                    {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 rounded-btn bg-accent hover:bg-accent-hover text-accent-contrast py-2.5 px-4 text-sm font-semibold shadow-xs transition-colors disabled:opacity-50 min-h-[42px] focus-visible:ring-2 focus-visible:ring-focus-ring outline-hidden cursor-pointer"
-                data-testid="login-submit-button"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <span>Sign in</span>
-                )}
-              </button>
-            </form>
-
-            <div className="mt-5 border-t border-border-subtle pt-4 text-center">
-              <p className="text-xs text-text-muted">
-                Access is checked on the server for every question.
-              </p>
             </div>
-          </div>
-        </div>
 
-        {/* Footer */}
-        <div className="text-center text-xs text-text-muted py-2">
-          VaultRAG • Secure Document & Data Retrieval System
+            <div>
+              <label htmlFor="login-password" className="block text-xs font-semibold text-text mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-text-muted">
+                  <Lock size={16} aria-hidden="true" />
+                </div>
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (localError) setLocalError(null);
+                  }}
+                  disabled={isSubmitting}
+                  required
+                  placeholder="••••••••••••"
+                  className="w-full rounded-input border border-border bg-background py-2 pl-9 pr-10 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text"
+                >
+                  {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full flex items-center justify-center gap-2 rounded-btn bg-accent py-2 px-4 text-sm font-semibold text-accent-contrast shadow-xs hover:bg-accent-hover disabled:opacity-50 transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+              data-testid="login-submit-button"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <span>Sign in</span>
+              )}
+            </button>
+          </form>
         </div>
-      </div>
+      </main>
+
+      <footer className="text-center text-xs text-text-muted">
+        VaultRAG • Secure Document & Data Retrieval System
+      </footer>
     </div>
   );
 };

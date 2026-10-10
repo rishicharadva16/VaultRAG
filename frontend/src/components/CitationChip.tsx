@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { CitationItem } from '../api/types';
 import { formatSourceLabel } from '../lib/format';
-import { FileTypeIcon } from './ui/FileTypeIcon';
-import { Database } from 'lucide-react';
+import { FileText, Database } from 'lucide-react';
 
 interface CitationChipProps {
   citation: CitationItem;
@@ -37,10 +36,10 @@ export const CitationChip: React.FC<CitationChipProps> = ({
           onFocus={() => setShowTooltip(true)}
           onBlur={() => setShowTooltip(false)}
           aria-label={`Citation [${citation.id}]: ${citation.file}`}
-          className={`inline-flex items-center justify-center font-mono text-xs px-2 py-0.5 rounded-badge font-semibold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${
+          className={`inline-flex items-center justify-center font-mono text-xs px-1.5 py-0.5 rounded-btn font-semibold transition-all border ${
             isSelected
-              ? 'bg-accent text-accent-contrast border-transparent shadow-xs scale-105'
-              : 'bg-primary-soft text-accent border-accent/20 hover:bg-primary/20 hover:border-accent/40'
+              ? 'bg-accent text-accent-contrast border-accent shadow-xs scale-105'
+              : 'bg-surface text-accent border-border hover:bg-surface-raised hover:border-accent hover:text-accent-hover'
           }`}
           data-testid={`citation-marker-${citation.id}`}
         >
@@ -50,12 +49,12 @@ export const CitationChip: React.FC<CitationChipProps> = ({
         {showTooltip && citation.snippet && (
           <span
             role="tooltip"
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 w-72 rounded-card border border-border bg-surface p-3 text-xs text-text shadow-panel transition-opacity pointer-events-none animate-in fade-in duration-100"
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-30 w-64 rounded-card border border-border bg-surface p-2.5 text-xs text-text shadow-raised transition-opacity pointer-events-none"
           >
-            <span className="block font-semibold text-text-muted mb-1 truncate text-[11px] uppercase tracking-wider">
+            <span className="block font-medium text-text-muted mb-1 truncate">
               {formatSourceLabel(citation.file, citation.page, citation.row_id)}
             </span>
-            <span className="block line-clamp-3 text-text font-normal leading-relaxed text-xs">
+            <span className="block line-clamp-3 text-text font-normal leading-relaxed">
               "{citation.snippet}"
             </span>
           </span>
@@ -75,46 +74,35 @@ export const CitationChip: React.FC<CitationChipProps> = ({
         onFocus={() => setShowTooltip(true)}
         onBlur={() => setShowTooltip(false)}
         aria-label={`Open citation ${citation.id} from ${citation.file}`}
-        className={`flex items-center gap-2 rounded-btn border px-3 py-1.5 text-xs font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-focus-ring min-h-[36px] ${
+        className={`flex items-center gap-1.5 rounded-btn border px-2.5 py-1 text-xs font-medium transition-colors ${
           isSelected
-            ? 'bg-primary-soft text-primary border-primary shadow-xs ring-1 ring-primary/40 font-semibold'
-            : 'bg-surface text-text border-border hover:bg-surface-2 hover:border-border-subtle'
+            ? 'bg-accent text-accent-contrast border-accent'
+            : 'bg-surface text-text border-border hover:bg-surface-raised hover:border-accent'
         }`}
         data-testid={`citation-source-${citation.id}`}
       >
-        <span
-          className={`flex h-4 w-4 items-center justify-center rounded-full font-mono text-[10px] font-bold ${
-            isSelected ? 'bg-primary text-white' : 'bg-surface-2 text-text-muted border border-border'
-          }`}
-        >
+        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-surface-raised font-mono text-[10px] text-text-muted">
           {citation.id}
         </span>
         {isDb ? (
-          <Database size={14} className="shrink-0 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />
+          <Database size={13} className="shrink-0 text-text-muted" aria-hidden="true" />
         ) : (
-          <FileTypeIcon kind={citation.file.split('.').pop() || 'text'} size={14} />
+          <FileText size={13} className="shrink-0 text-text-muted" aria-hidden="true" />
         )}
-        <span className="truncate max-w-[160px] sm:max-w-[200px]">
-          {citation.file}
+        <span className="truncate max-w-[180px]">
+          {formatSourceLabel(citation.file, citation.page, citation.row_id)}
         </span>
-        {citation.page !== null && (
-          <span className="rounded bg-surface-2 px-1.5 py-0.2 text-[10px] font-mono text-text-muted border border-border/60">
-            p.{citation.page}
-          </span>
-        )}
       </button>
 
       {showTooltip && citation.snippet && (
         <div
           role="tooltip"
-          className="absolute bottom-full left-0 mb-2 z-30 w-80 rounded-card border border-border bg-surface p-3 text-xs text-text shadow-panel transition-opacity pointer-events-none animate-in fade-in duration-100"
+          className="absolute bottom-full left-0 mb-1.5 z-30 w-72 rounded-card border border-border bg-surface p-2.5 text-xs text-text shadow-raised transition-opacity pointer-events-none"
         >
-          <div className="font-semibold text-text-muted mb-1 truncate text-[11px] uppercase tracking-wider">
+          <div className="font-medium text-text-muted mb-1 truncate">
             {formatSourceLabel(citation.file, citation.page, citation.row_id)}
           </div>
-          <div className="line-clamp-4 text-text leading-relaxed text-xs">
-            "{citation.snippet}"
-          </div>
+          <div className="line-clamp-4 text-text leading-relaxed">"{citation.snippet}"</div>
         </div>
       )}
     </div>

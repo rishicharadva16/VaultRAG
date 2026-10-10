@@ -4,11 +4,11 @@ import { CitationItem, SourceViewResponse, SourcePagesResponse, Rect } from '../
 import { formatSourceLabel } from '../lib/format';
 import { HighlightedText } from './HighlightedText';
 import { Skeleton } from './Skeleton';
-import { FileTypeIcon } from './ui';
 import {
   X,
   Quote,
   AlertCircle,
+  FileText,
   Database,
   ChevronLeft,
   ChevronRight,
@@ -463,33 +463,19 @@ export const CitationPanel: React.FC<CitationPanelProps> = ({
       </div>
 
       {/* ── Header ────────────────────────────────────────────── */}
-      <div className="flex flex-col border-b border-border bg-surface-2/70 shrink-0">
-        <div className="flex items-center justify-between p-4 gap-2">
+      <div className="flex flex-col border-b border-border bg-surface-raised shrink-0">
+        <div className="flex items-center justify-between p-3.5 gap-2">
           {/* File & Location Info */}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-xs font-semibold text-text-muted">
-              {isDb ? (
-                <Database size={14} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
-              ) : (
-                <FileTypeIcon kind={citation.file.split('.').pop() || 'text'} size={15} />
-              )}
+            <div className="flex items-center gap-1.5 text-xs font-medium text-text-muted">
+              {isDb ? <Database size={13} className="shrink-0" /> : <FileText size={13} className="shrink-0" />}
               <span className="truncate">
                 {isDb
-                  ? `Row ${viewData?.row_id || citation.row_id || 'N/A'}`
+                  ? `Row ${viewData?.row_id || citation.row_id || 'N/A'} in ${viewData?.file || citation.file}`
                   : `Page ${currentPage} of ${totalDocPages}`}
               </span>
-              {viewData?.match === 'exact' && (
-                <span className="rounded-badge bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold shrink-0">
-                  Exact match
-                </span>
-              )}
-              {viewData?.match === 'partial' && (
-                <span className="rounded-badge bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 px-2 py-0.5 text-[10px] font-semibold shrink-0">
-                  Approximate
-                </span>
-              )}
             </div>
-            <h2 className="truncate font-heading text-sm font-bold text-text mt-1" title={citation.file}>
+            <h2 className="truncate text-sm font-semibold text-text mt-0.5" title={citation.file}>
               {formatSourceLabel(citation.file, citation.page, citation.row_id)}
             </h2>
           </div>
@@ -497,17 +483,17 @@ export const CitationPanel: React.FC<CitationPanelProps> = ({
           {/* Citation Stepper & Close */}
           <div className="flex items-center gap-1.5 shrink-0">
             {citations.length > 1 && (
-              <div className="flex items-center border border-border rounded-btn bg-surface px-1 py-0.5 text-xs text-text-muted mr-1 shadow-xs">
+              <div className="flex items-center border border-border rounded-btn bg-surface px-1 py-0.5 text-xs text-text-muted mr-1">
                 <button
                   type="button"
                   onClick={handlePrev}
                   disabled={!canGoPrev}
                   aria-label="Previous citation"
-                  className="p-1 rounded hover:bg-surface-2 hover:text-text disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                  className="p-1 rounded hover:bg-surface-raised hover:text-text disabled:opacity-30 disabled:pointer-events-none transition-colors"
                 >
-                  <ChevronLeft size={15} />
+                  <ChevronLeft size={14} />
                 </button>
-                <span className="px-2 font-mono font-semibold select-none text-[11px] text-text">
+                <span className="px-1.5 font-medium select-none text-[11px]">
                   {activeIdx + 1} of {totalCitations}
                 </span>
                 <button
@@ -515,9 +501,9 @@ export const CitationPanel: React.FC<CitationPanelProps> = ({
                   onClick={handleNext}
                   disabled={!canGoNext}
                   aria-label="Next citation"
-                  className="p-1 rounded hover:bg-surface-2 hover:text-text disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                  className="p-1 rounded hover:bg-surface-raised hover:text-text disabled:opacity-30 disabled:pointer-events-none transition-colors"
                 >
-                  <ChevronRight size={15} />
+                  <ChevronRight size={14} />
                 </button>
               </div>
             )}
@@ -526,23 +512,21 @@ export const CitationPanel: React.FC<CitationPanelProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close source viewer (Esc)"
-              className="rounded-btn p-1.5 text-text-muted hover:bg-surface-2 hover:text-text transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+              className="rounded-btn p-1.5 text-text-muted hover:bg-surface hover:text-text transition-colors"
             >
               <X size={18} aria-hidden="true" />
             </button>
           </div>
         </div>
 
-        {/* Highlighted Quote Caption (Tinted callout) */}
+        {/* Highlighted Quote Caption (One-line under header, replaces blockquote) */}
         {citation.highlight_text && (
           <div
-            className="border-t border-border-subtle bg-primary-soft/40 px-4 py-2.5 text-xs text-text flex items-start gap-2 min-w-0"
+            className="border-t border-border-subtle bg-surface/80 px-3.5 py-1.5 text-xs text-text-muted italic flex items-center gap-1.5 min-w-0"
             data-testid="citation-caption"
           >
-            <Quote size={13} className="shrink-0 text-primary mt-0.5" aria-hidden="true" />
-            <span className="italic leading-relaxed font-medium line-clamp-2">
-              "{citation.highlight_text}"
-            </span>
+            <Quote size={12} className="shrink-0 text-accent not-italic" aria-hidden="true" />
+            <span className="truncate">"{citation.highlight_text}"</span>
           </div>
         )}
 

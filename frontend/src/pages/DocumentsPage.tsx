@@ -1,22 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, ApiClientError } from '../api/client';
-import { DocumentItem, CitationItem } from '../api/types';
+import { DocumentItem, DocumentKind, DocumentStatus, CitationItem } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { CitationPanel } from '../components/CitationPanel';
 import { ShareDialog } from '../components/ShareDialog';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { Skeleton } from '../components/Skeleton';
 import {
-  PageHeader,
-  StatCard,
-  SegmentedControl,
-  FileTypeIcon,
-  StatusPill,
-  Button,
-} from '../components/ui';
-import {
   Upload,
+  FileText,
+  FileSpreadsheet,
+  FileImage,
+  FileCode,
+  File,
   Share2,
   Trash2,
   MessageSquare,
@@ -24,11 +21,11 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Clock,
   X,
   Shield,
   FolderOpen,
   Users,
-  Lock,
 } from 'lucide-react';
 
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
@@ -55,6 +52,57 @@ function formatDate(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+function getFileIcon(kind: DocumentKind) {
+  switch (kind) {
+    case 'pdf':
+      return <FileText className="text-red-500" size={18} aria-hidden="true" />;
+    case 'csv':
+      return <FileSpreadsheet className="text-green-600" size={18} aria-hidden="true" />;
+    case 'image':
+      return <FileImage className="text-blue-500" size={18} aria-hidden="true" />;
+    case 'text':
+      return <FileCode className="text-amber-500" size={18} aria-hidden="true" />;
+    default:
+      return <File className="text-text-muted" size={18} aria-hidden="true" />;
+  }
+}
+
+function StatusChip({ status, reasonCode }: { status: DocumentStatus; reasonCode: string | null }) {
+  if (status === 'ready') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+        <CheckCircle2 size={12} aria-hidden="true" />
+        Ready
+      </span>
+    );
+  }
+  if (status === 'processing') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+        <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+        Processing
+      </span>
+    );
+  }
+  if (status === 'queued') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
+        <Clock size={12} aria-hidden="true" />
+        Queued
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-400"
+      title={reasonCode ? `Reason: ${reasonCode}` : undefined}
+    >
+      <AlertCircle size={12} aria-hidden="true" />
+      Failed{reasonCode ? `: ${reasonCode}` : ''}
+    </span>
+  );
 }
 
 export const DocumentsPage: React.FC = () => {
@@ -343,79 +391,35 @@ export const DocumentsPage: React.FC = () => {
     );
   };
 
-  const totalDocs = documents.length;
-  const readyDocs = documents.filter((d) => d.status === 'ready').length;
-  const sharedDocs = documents.filter((d) => (d.shared_with_count ?? 0) > 0).length;
-  const privateDocs = documents.filter((d) => !d.shared_with_count || d.shared_with_count === 0).length;
-
   return (
     <div className="flex h-full w-full overflow-hidden relative">
-      <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-6 lg:p-8 items-center min-w-0">
-        <div className="w-full max-w-6xl space-y-6">
+      <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-6 items-center min-w-0">
+        <div className="w-full max-w-5xl space-y-6">
           {/* Page Header */}
-          <PageHeader
-            title="My Documents"
-            subtitle="Upload and securely share documents with row-level and column-level access controls."
-            actions={
-              <Button
-                variant="primary"
-                size="sm"
-                leadingIcon={<Upload size={14} />}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Upload Document
-              </Button>
-            }
-          />
-
-          {/* Stat Cards Row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <StatCard
-              label="Total Documents"
-              value={totalDocs}
-              icon={<FolderOpen size={18} />}
-              iconBg="bg-primary-soft text-primary"
-            />
-            <StatCard
-              label="Ready & Indexed"
-              value={readyDocs}
-              icon={<CheckCircle2 size={18} />}
-              iconBg="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            />
-            <StatCard
-              label="Shared Documents"
-              value={sharedDocs}
-              icon={<Users size={18} />}
-              iconBg="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
-            />
-            <StatCard
-              label="Private Documents"
-              value={privateDocs}
-              icon={<Lock size={18} />}
-              iconBg="bg-slate-500/10 text-slate-600 dark:text-slate-400"
-            />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-text">My Documents</h1>
+              <p className="text-xs text-text-muted mt-1">
+                Upload and securely share documents with row-level and column-level access controls.
+              </p>
+            </div>
           </div>
 
           {/* Upload Card / Dropzone */}
-          <div className="rounded-card border border-border bg-surface p-5 sm:p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-text flex items-center gap-2">
-                <Upload size={16} className="text-accent" aria-hidden="true" />
-                Upload Document
-              </h2>
-              <span className="text-xs text-text-muted">
-                PDF, PNG, JPG, JPEG, CSV, TXT, MD (Max 20 MB)
-              </span>
-            </div>
+          <div className="rounded-card border border-border bg-surface p-5 shadow-xs space-y-4">
+            <h2 className="text-sm font-semibold text-text flex items-center gap-2">
+              <Upload size={16} className="text-accent" aria-hidden="true" />
+              Upload Document
+            </h2>
 
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`flex flex-col items-center justify-center rounded-card border-2 border-dashed p-8 text-center transition-all duration-150 ${
+              className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
                 isDragging
-                  ? 'border-accent bg-accent/10 scale-[0.99]'
-                  : 'border-border bg-surface-2/60 hover:bg-surface-2 hover:border-border-subtle'
+                  ? 'border-accent bg-accent/5'
+                  : 'border-border bg-surface-raised/40 hover:bg-surface-raised'
               }`}
             >
               <input
@@ -430,42 +434,29 @@ export const DocumentsPage: React.FC = () => {
                   }
                 }}
               />
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft text-primary mb-3 shadow-xs">
-                <Upload size={22} aria-hidden="true" />
-              </div>
-              <p className="text-xs sm:text-sm font-medium text-text">
-                Drag a file here or{' '}
+              <Upload size={28} className="text-text-muted mb-2" aria-hidden="true" />
+              <p className="text-xs font-medium text-text">
+                Drag & drop your file here, or{' '}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-primary underline hover:text-accent font-semibold focus:outline-hidden transition-colors"
+                  className="text-accent underline hover:text-accent-hover font-semibold focus:outline-none"
                   data-testid="browse-files-button"
                 >
-                  browse
+                  browse files
                 </button>
               </p>
-              <p className="text-[11px] text-text-muted mt-1.5">
+              <p className="text-[11px] text-text-muted mt-1">
                 Supported formats: PDF, PNG, JPG, JPEG, CSV, TXT, MD (Max 20 MB)
               </p>
             </div>
 
             {/* Selected File Details & Actions */}
             {selectedFile && (
-              <div className="rounded-btn border border-border bg-surface-2 p-3.5 space-y-3">
+              <div className="rounded-md border border-border bg-surface p-3 space-y-3">
                 <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2.5 truncate">
-                    <FileTypeIcon
-                      kind={
-                        selectedFile.name.endsWith('.pdf')
-                          ? 'pdf'
-                          : selectedFile.name.endsWith('.csv')
-                          ? 'csv'
-                          : selectedFile.name.match(/\.(png|jpe?g)$/i)
-                          ? 'image'
-                          : 'text'
-                      }
-                      size={18}
-                    />
+                  <div className="flex items-center gap-2 truncate">
+                    <FileText size={16} className="text-accent shrink-0" aria-hidden="true" />
                     <span className="font-semibold text-text truncate">{selectedFile.name}</span>
                     <span className="text-text-muted">({formatBytes(selectedFile.size)})</span>
                   </div>
@@ -478,7 +469,7 @@ export const DocumentsPage: React.FC = () => {
                         setSelectedSensitiveCols([]);
                         setUploadError(null);
                       }}
-                      className="p-1 text-text-muted hover:text-text rounded-btn"
+                      className="p-1 text-text-muted hover:text-text rounded"
                       aria-label="Remove selected file"
                     >
                       <X size={14} aria-hidden="true" />
@@ -488,7 +479,7 @@ export const DocumentsPage: React.FC = () => {
 
                 {/* CSV Sensitive Column Detection */}
                 {csvHeaders.length > 0 && (
-                  <div className="rounded-btn border border-amber-500/30 bg-amber-500/10 p-3 space-y-2 text-xs">
+                  <div className="rounded border border-amber-500/30 bg-amber-500/5 p-3 space-y-2 text-xs">
                     <div className="flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-400">
                       <Shield size={14} aria-hidden="true" />
                       <span>Mark as sensitive (only you and admins will see these columns):</span>
@@ -503,7 +494,7 @@ export const DocumentsPage: React.FC = () => {
                             type="checkbox"
                             checked={selectedSensitiveCols.includes(col)}
                             onChange={() => toggleSensitiveCol(col)}
-                            className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
+                            className="h-3.5 w-3.5 rounded border-border text-accent focus:ring-accent"
                           />
                           <span className="truncate">{col}</span>
                         </label>
@@ -535,15 +526,15 @@ export const DocumentsPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="flex justify-end pt-1">
-                    <Button
-                      variant="primary"
-                      size="sm"
+                    <button
+                      type="button"
                       onClick={handleStartUpload}
-                      leadingIcon={<Upload size={14} />}
+                      className="inline-flex items-center gap-2 rounded-btn bg-accent px-4 py-2 text-xs font-semibold text-accent-contrast shadow-xs hover:bg-accent-hover transition-colors"
                       data-testid="confirm-upload-button"
                     >
-                      Upload & Ingest
-                    </Button>
+                      <Upload size={14} aria-hidden="true" />
+                      <span>Upload & Ingest</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -552,7 +543,7 @@ export const DocumentsPage: React.FC = () => {
             {/* Upload notifications */}
             {uploadError && (
               <div
-                className="rounded-btn border border-danger/40 bg-danger/10 p-3 text-xs text-danger flex items-center gap-2"
+                className="rounded-md border border-danger/40 bg-danger/10 p-3 text-xs text-danger flex items-center gap-2"
                 role="alert"
                 data-testid="upload-error-message"
               >
@@ -563,7 +554,7 @@ export const DocumentsPage: React.FC = () => {
 
             {uploadSuccessMessage && (
               <div
-                className="rounded-btn border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2"
+                className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2"
                 role="status"
                 aria-live="polite"
                 data-testid="upload-success-message"
@@ -577,7 +568,7 @@ export const DocumentsPage: React.FC = () => {
           {/* Banner message */}
           {bannerMessage && (
             <div
-              className="rounded-btn border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-between"
+              className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-between"
               role="status"
               aria-live="polite"
             >
@@ -588,7 +579,7 @@ export const DocumentsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setBannerMessage(null)}
-                className="p-1 text-text-muted hover:text-text rounded-btn"
+                className="p-1 text-text-muted hover:text-text rounded"
                 aria-label="Dismiss banner"
               >
                 <X size={14} aria-hidden="true" />
@@ -598,25 +589,33 @@ export const DocumentsPage: React.FC = () => {
 
           {/* Tabs: My uploads vs Shared with me */}
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-3">
-              <SegmentedControl
-                value={activeTab}
-                onChange={(val) => setActiveTab(val as 'mine' | 'shared')}
-                options={[
-                  {
-                    value: 'mine',
-                    label: 'My uploads',
-                    count: activeTab === 'mine' ? documents.length : undefined,
-                    testId: 'tab-my-uploads',
-                  },
-                  {
-                    value: 'shared',
-                    label: 'Shared with me',
-                    count: activeTab === 'shared' ? documents.length : undefined,
-                    testId: 'tab-shared-with-me',
-                  },
-                ]}
-              />
+            <div className="flex items-center justify-between border-b border-border pb-1">
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('mine')}
+                  className={`pb-2.5 text-sm font-semibold transition-colors border-b-2 ${
+                    activeTab === 'mine'
+                      ? 'border-accent text-accent'
+                      : 'border-transparent text-text-muted hover:text-text'
+                  }`}
+                  data-testid="tab-my-uploads"
+                >
+                  My uploads
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('shared')}
+                  className={`pb-2.5 text-sm font-semibold transition-colors border-b-2 ${
+                    activeTab === 'shared'
+                      ? 'border-accent text-accent'
+                      : 'border-transparent text-text-muted hover:text-text'
+                  }`}
+                  data-testid="tab-shared-with-me"
+                >
+                  Shared with me
+                </button>
+              </div>
 
               {documents.some((d) => d.status === 'queued' || d.status === 'processing') && (
                 <div className="flex items-center gap-1.5 text-xs text-text-muted">
@@ -638,25 +637,25 @@ export const DocumentsPage: React.FC = () => {
             {/* Skeletons while loading */}
             {isLoading && (
               <div className="space-y-3 pt-2" aria-live="polite">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
               </div>
             )}
 
             {/* Empty State */}
             {!isLoading && documents.length === 0 && (
               <div
-                className="rounded-card border border-border bg-surface p-10 text-center shadow-xs"
+                className="rounded-card border border-border bg-surface p-8 text-center"
                 data-testid="empty-documents-state"
               >
-                <div className="inline-flex rounded-2xl bg-surface-2 p-3.5 text-text-muted border border-border mb-3 shadow-xs">
-                  <FolderOpen size={26} aria-hidden="true" />
+                <div className="inline-flex rounded-full bg-surface-raised p-3 text-text-muted border border-border mb-3">
+                  <FolderOpen size={24} aria-hidden="true" />
                 </div>
-                <h3 className="font-heading text-base font-semibold text-text">
+                <h3 className="text-sm font-semibold text-text">
                   {activeTab === 'mine' ? 'No documents uploaded yet' : 'No documents shared with you'}
                 </h3>
-                <p className="text-xs text-text-muted max-w-sm mx-auto mt-1 leading-relaxed">
+                <p className="text-xs text-text-muted max-w-sm mx-auto mt-1">
                   {activeTab === 'mine'
                     ? 'Upload PDF, CSV, TXT or images above to index them into your secure knowledge vault.'
                     : 'When colleagues or teams share documents with you, they will appear here.'}
@@ -668,9 +667,9 @@ export const DocumentsPage: React.FC = () => {
             {!isLoading && documents.length > 0 && (
               <div className="space-y-3" aria-live="polite">
                 {/* Desktop Table View */}
-                <div className="hidden md:block overflow-hidden rounded-card border border-border bg-surface shadow-sm">
+                <div className="hidden md:block overflow-hidden rounded-card border border-border bg-surface shadow-xs">
                   <table className="w-full text-left text-xs">
-                    <thead className="border-b border-border bg-surface-2 text-text-muted font-semibold uppercase tracking-wider">
+                    <thead className="border-b border-border bg-surface-raised text-text-muted font-semibold uppercase tracking-wider">
                       <tr>
                         <th className="py-3 px-4">File Name</th>
                         <th className="py-3 px-3">Size</th>
@@ -686,55 +685,48 @@ export const DocumentsPage: React.FC = () => {
                       {documents.map((doc) => (
                         <tr
                           key={doc.id}
-                          className="hover:bg-surface-2/60 transition-colors"
+                          className="hover:bg-surface-raised/50 transition-colors"
                           data-testid={`document-row-${doc.id}`}
                         >
-                          <td className="py-3.5 px-4 font-medium text-text">
-                            <div className="flex items-center gap-2.5 max-w-xs truncate">
-                              <FileTypeIcon kind={doc.kind} size={18} />
-                              <span className="truncate font-semibold" title={doc.filename}>
+                          <td className="py-3 px-4 font-medium text-text">
+                            <div className="flex items-center gap-2 max-w-xs truncate">
+                              {getFileIcon(doc.kind)}
+                              <span className="truncate" title={doc.filename}>
                                 {doc.filename}
                               </span>
                             </div>
                           </td>
-                          <td className="py-3.5 px-3 text-text-muted whitespace-nowrap">
+                          <td className="py-3 px-3 text-text-muted whitespace-nowrap">
                             {formatBytes(doc.size_bytes)}
                           </td>
-                          <td className="py-3.5 px-3 text-text-muted whitespace-nowrap">
+                          <td className="py-3 px-3 text-text-muted whitespace-nowrap">
                             {formatDate(doc.created_at)}
                           </td>
-                          <td className="py-3.5 px-3 whitespace-nowrap">
-                            <StatusPill
-                              status={doc.status}
-                              reasonCode={doc.reason_code}
-                              label={doc.status === 'failed' && doc.reason_code ? `Failed: ${doc.reason_code}` : undefined}
-                            />
+                          <td className="py-3 px-3 whitespace-nowrap">
+                            <StatusChip status={doc.status} reasonCode={doc.reason_code} />
                           </td>
-                          <td className="py-3.5 px-3 text-text-muted whitespace-nowrap">
+                          <td className="py-3 px-3 text-text-muted whitespace-nowrap">
                             {activeTab === 'mine' ? (
                               doc.shared_with_count && doc.shared_with_count > 0 ? (
-                                <span className="inline-flex items-center gap-1.5 font-medium text-text bg-surface-2 px-2 py-0.5 rounded-badge border border-border">
+                                <span className="inline-flex items-center gap-1 font-medium text-text">
                                   <Users size={12} className="text-accent" aria-hidden="true" />
                                   Shared ({doc.shared_with_count})
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 text-text-muted bg-surface-2 px-2 py-0.5 rounded-badge border border-border">
-                                  <Lock size={12} aria-hidden="true" />
-                                  Private
-                                </span>
+                                <span>Private</span>
                               )
                             ) : (
                               <span>{doc.owner.name}</span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1.5">
                               {/* Ask about this document */}
                               <button
                                 type="button"
                                 onClick={() => handleAskAboutDocument(doc)}
                                 disabled={doc.status !== 'ready'}
-                                className="inline-flex items-center gap-1 rounded-btn px-2.5 py-1 text-xs font-medium text-text-muted hover:bg-surface-2 hover:text-primary disabled:opacity-30 transition-colors"
+                                className="inline-flex items-center gap-1 rounded-btn px-2 py-1 text-xs font-medium text-text-muted hover:bg-surface-raised hover:text-accent disabled:opacity-30 transition-colors"
                                 title="Ask questions about this document"
                                 data-testid={`ask-doc-button-${doc.id}`}
                               >
@@ -747,7 +739,7 @@ export const DocumentsPage: React.FC = () => {
                                 type="button"
                                 onClick={() => handleOpenDocument(doc)}
                                 disabled={doc.status !== 'ready'}
-                                className="inline-flex items-center gap-1 rounded-btn px-2.5 py-1 text-xs font-medium text-text-muted hover:bg-surface-2 hover:text-text disabled:opacity-30 transition-colors"
+                                className="inline-flex items-center gap-1 rounded-btn px-2 py-1 text-xs font-medium text-text-muted hover:bg-surface-raised hover:text-text disabled:opacity-30 transition-colors"
                                 title="Open in Source Viewer"
                                 data-testid={`open-doc-button-${doc.id}`}
                               >
@@ -760,7 +752,7 @@ export const DocumentsPage: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => setSharingDoc(doc)}
-                                  className="inline-flex items-center gap-1 rounded-btn px-2.5 py-1 text-xs font-medium text-text-muted hover:bg-surface-2 hover:text-text transition-colors"
+                                  className="inline-flex items-center gap-1 rounded-btn px-2 py-1 text-xs font-medium text-text-muted hover:bg-surface-raised hover:text-text transition-colors"
                                   title="Manage document access"
                                   data-testid={`share-doc-button-${doc.id}`}
                                 >
@@ -774,7 +766,7 @@ export const DocumentsPage: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => setDeleteDoc(doc)}
-                                  className="inline-flex items-center gap-1 rounded-btn px-2.5 py-1 text-xs font-medium text-danger hover:bg-rose-500/10 hover:text-danger transition-colors"
+                                  className="inline-flex items-center gap-1 rounded-btn px-2 py-1 text-xs font-medium text-danger hover:bg-red-50 hover:text-danger dark:hover:bg-red-950/40 transition-colors"
                                   title="Delete document"
                                   data-testid={`delete-doc-button-${doc.id}`}
                                 >
@@ -795,29 +787,25 @@ export const DocumentsPage: React.FC = () => {
                   {documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="rounded-card border border-border bg-surface p-4 shadow-sm space-y-3"
+                      className="rounded-card border border-border bg-surface p-4 shadow-xs space-y-3"
                       data-testid={`document-card-${doc.id}`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5 truncate">
-                          <FileTypeIcon kind={doc.kind} size={20} />
+                        <div className="flex items-center gap-2 truncate">
+                          {getFileIcon(doc.kind)}
                           <div className="truncate">
                             <h4 className="font-semibold text-xs text-text truncate">
                               {doc.filename}
                             </h4>
-                            <p className="text-[11px] text-text-muted mt-0.5">
+                            <p className="text-[11px] text-text-muted">
                               {formatBytes(doc.size_bytes)} • {formatDate(doc.created_at)}
                             </p>
                           </div>
                         </div>
-                        <StatusPill
-                          status={doc.status}
-                          reasonCode={doc.reason_code}
-                          label={doc.status === 'failed' && doc.reason_code ? `Failed: ${doc.reason_code}` : undefined}
-                        />
+                        <StatusChip status={doc.status} reasonCode={doc.reason_code} />
                       </div>
 
-                      <div className="flex items-center justify-between border-t border-border pt-2 text-xs text-text-muted">
+                      <div className="flex items-center justify-between border-t border-border-subtle pt-2 text-xs text-text-muted">
                         <span>
                           {activeTab === 'mine'
                             ? doc.shared_with_count && doc.shared_with_count > 0
@@ -831,7 +819,7 @@ export const DocumentsPage: React.FC = () => {
                             type="button"
                             onClick={() => handleAskAboutDocument(doc)}
                             disabled={doc.status !== 'ready'}
-                            className="p-2 text-text-muted hover:text-primary rounded-btn min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
+                            className="p-1.5 text-text-muted hover:text-accent rounded min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
                             title="Ask about this document"
                             aria-label="Ask about this document"
                           >
@@ -841,7 +829,7 @@ export const DocumentsPage: React.FC = () => {
                             type="button"
                             onClick={() => handleOpenDocument(doc)}
                             disabled={doc.status !== 'ready'}
-                            className="p-2 text-text-muted hover:text-text rounded-btn min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
+                            className="p-1.5 text-text-muted hover:text-text rounded min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
                             title="Open in Source Viewer"
                             aria-label="Open in Source Viewer"
                           >
@@ -851,7 +839,7 @@ export const DocumentsPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setSharingDoc(doc)}
-                              className="p-2 text-text-muted hover:text-text rounded-btn min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
+                              className="p-1.5 text-text-muted hover:text-text rounded min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
                               title="Share"
                               aria-label="Share document"
                             >
@@ -862,7 +850,7 @@ export const DocumentsPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setDeleteDoc(doc)}
-                              className="p-2 text-danger rounded-btn min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
+                              className="p-1.5 text-danger rounded min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
                               title="Delete"
                               aria-label="Delete document"
                             >
@@ -893,32 +881,30 @@ export const DocumentsPage: React.FC = () => {
       {/* Delete Confirmation Dialog */}
       {deleteDoc && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-scale-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-dialog-title"
         >
-          <div className="w-full max-w-md rounded-dialog border border-border bg-surface p-6 shadow-xl space-y-4">
+          <div className="w-full max-w-md rounded-card border border-border bg-surface p-5 shadow-raised space-y-4">
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2.5 text-danger">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-500/10 text-danger shrink-0">
-                  <AlertCircle size={20} aria-hidden="true" />
-                </div>
-                <h3 id="delete-dialog-title" className="font-heading text-base font-bold text-text">
+              <div className="flex items-center gap-2 text-danger">
+                <AlertCircle size={20} aria-hidden="true" />
+                <h3 id="delete-dialog-title" className="text-sm font-bold text-text">
                   Delete Document
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setDeleteDoc(null)}
-                className="p-1.5 text-text-muted hover:text-text rounded-btn"
+                className="p-1 text-text-muted hover:text-text rounded"
                 aria-label="Close dialog"
               >
                 <X size={16} aria-hidden="true" />
               </button>
             </div>
 
-            <p className="text-xs sm:text-sm text-text-muted leading-relaxed">
+            <p className="text-xs text-text-muted leading-relaxed">
               Are you sure you want to delete{' '}
               <strong className="text-text font-semibold">{deleteDoc.filename}</strong>? It will
               be removed for everyone it was shared with.
@@ -926,32 +912,32 @@ export const DocumentsPage: React.FC = () => {
 
             {deleteError && (
               <div
-                className="rounded-btn border border-danger/30 bg-danger/10 p-3 text-xs text-danger"
+                className="rounded border border-danger/30 bg-danger/10 p-2.5 text-xs text-danger"
                 role="alert"
               >
                 {deleteError}
               </div>
             )}
 
-            <div className="flex justify-end gap-2.5 pt-2">
-              <Button
-                variant="secondary"
-                size="sm"
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
                 onClick={() => setDeleteDoc(null)}
+                className="rounded-btn border border-border px-3 py-1.5 text-xs font-semibold text-text hover:bg-surface-raised transition-colors"
                 disabled={isDeleting}
               >
                 Cancel
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
+              </button>
+              <button
+                type="button"
                 onClick={handleConfirmDelete}
-                loading={isDeleting}
-                leadingIcon={<Trash2 size={13} />}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-1.5 rounded-btn bg-danger px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-danger-hover disabled:opacity-40 transition-colors"
                 data-testid="confirm-delete-button"
               >
-                Delete
-              </Button>
+                {isDeleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                <span>Delete</span>
+              </button>
             </div>
           </div>
         </div>
