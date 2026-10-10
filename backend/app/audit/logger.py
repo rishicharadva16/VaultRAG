@@ -17,6 +17,9 @@ def write_audit(
     question_hash: str | None = None,
     question_length: int | None = None,
     details: dict | None = None,
+    question: str | None = None,
+    outcome: str | None = None,
+    source_count: int | None = None,
 ) -> AuditLog:
     ev = event or event_type or "unknown"
     ev_type = event_type or event or "unknown"
@@ -32,6 +35,9 @@ def write_audit(
         question_hash=question_hash,
         question_length=question_length,
         details=details,
+        question=question,
+        outcome=outcome,
+        source_count=source_count,
     )
     db.add(log_entry)
     db.commit()

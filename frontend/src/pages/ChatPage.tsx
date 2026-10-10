@@ -35,14 +35,23 @@ export const ChatPage: React.FC = () => {
 
   // Update source filter if location state changes
   useEffect(() => {
-    const state = location.state as { source_ids?: string[]; source_filename?: string } | undefined;
+    const state = location.state as {
+      source_ids?: string[];
+      source_filename?: string;
+      auto_send_question?: string;
+    } | undefined;
     if (state?.source_ids && state.source_ids.length > 0 && state.source_filename) {
       setSourceFilter({
         source_ids: state.source_ids,
         filename: state.source_filename,
       });
     }
-  }, [location.state, setSourceFilter]);
+    if (state?.auto_send_question) {
+      const q = state.auto_send_question;
+      window.history.replaceState({}, document.title);
+      handleSendQuestion(q);
+    }
+  }, [location.state, setSourceFilter, handleSendQuestion]);
 
   // Scroll to bottom on initial mount and when messages change
   useEffect(() => {

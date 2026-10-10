@@ -6,6 +6,7 @@ import { ThemeToggle } from './ThemeToggle';
 import {
   MessageSquare,
   Search,
+  History,
   Files,
   LayoutDashboard,
   Users,
@@ -67,6 +68,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, className = '' 
           <NavLink to="/search" onClick={handleLinkClick} className={navLinkClass}>
             <Search size={18} className="shrink-0" aria-hidden="true" />
             <span>Document Search</span>
+          </NavLink>
+
+          <NavLink
+            to="/history"
+            onClick={handleLinkClick}
+            className={navLinkClass}
+            data-testid="nav-history"
+          >
+            <History size={18} className="shrink-0" aria-hidden="true" />
+            <span>History</span>
           </NavLink>
 
           <NavLink

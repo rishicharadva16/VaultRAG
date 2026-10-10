@@ -135,7 +135,10 @@ def ask(
     q_hash = hashlib.sha256(body.question.encode("utf-8")).hexdigest()[:16]
     q_len = len(body.question)
 
-    # Audit (never log chunk text, answer text, or raw question text)
+    outcome_val = "refused" if result.refused else "answered"
+    src_cnt = len(result.citations) if not result.refused else 0
+
+    # Audit (never log chunk text or answer text; question and metadata only)
     write_audit(
         db,
         user_id=user_id_str,
@@ -148,6 +151,9 @@ def ask(
         admin_access=is_admin,
         question_hash=q_hash,
         question_length=q_len,
+        question=body.question,
+        outcome=outcome_val,
+        source_count=src_cnt,
         details={
             "chunk_ids": [c.chunk_id for c in result.citations],
             "refused": result.refused,

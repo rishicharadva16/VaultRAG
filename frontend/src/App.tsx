@@ -8,6 +8,7 @@ import { AppShell } from './components/AppShell';
 import { LoginPage } from './pages/LoginPage';
 import { ChatPage } from './pages/ChatPage';
 import { SearchPage } from './pages/SearchPage';
+import { HistoryPage } from './pages/HistoryPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { UserManagementPage } from './pages/UserManagementPage';
@@ -36,6 +37,16 @@ export const App: React.FC = () => {
               <ProtectedRoute>
                 <AppShell>
                   <SearchPage />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <HistoryPage />
                 </AppShell>
               </ProtectedRoute>
             }

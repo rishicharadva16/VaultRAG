@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import admin, ask, auth, health, search, images, source, documents
+from app.api import admin, ask, auth, health, search, images, source, documents, history
 from app.config import settings
 from app.db.models import Document
 from app.db.session import SessionLocal
@@ -32,6 +32,17 @@ async def lifespan(app: FastAPI):
                 doc.reason_code = "interrupted"
             if interrupted:
                 db.commit()
+    except Exception:
+        pass
+
+    # Ensure history columns on audit_log
+    try:
+        from sqlalchemy import text
+        with SessionLocal() as db:
+            db.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS question VARCHAR;"))
+            db.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS outcome VARCHAR;"))
+            db.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS source_count INTEGER;"))
+            db.commit()
     except Exception:
         pass
 
@@ -66,6 +77,7 @@ app.include_router(ask.router)
 app.include_router(images.router)
 app.include_router(source.router)
 app.include_router(documents.router)
+app.include_router(history.router)
 
 # A1: /me as a top-level alias of /auth/me (same handler, same response)
 app.get("/me", response_model=auth.MeResponse, tags=["auth"])(auth.me)

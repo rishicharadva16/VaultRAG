@@ -46,6 +46,9 @@ class AuditLog(Base):
     question_hash = Column(String, nullable=True)
     question_length = Column(Integer, nullable=True)
     details = Column(JSONB, nullable=True)
+    question = Column(String, nullable=True)
+    outcome = Column(String, nullable=True)
+    source_count = Column(Integer, nullable=True)
 
 
 class Document(Base):

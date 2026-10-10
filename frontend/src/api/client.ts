@@ -13,6 +13,7 @@ import {
   DocumentUploadResponse,
   HealthResponse,
   HighlightSpan,
+  HistoryItem,
   PatchAdminUserPayload,
   SearchResponse,
   SharingTargets,
@@ -507,6 +508,28 @@ export const api = {
 
   deleteAdminUser: async (userId: string): Promise<void> => {
     return request<void>(`/admin/users/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+      requiresAuth: true,
+    });
+  },
+
+  getHistory: async (params?: {
+    limit?: number;
+    offset?: number;
+    q?: string;
+  }): Promise<HistoryItem[]> => {
+    const searchParams = new URLSearchParams();
+    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
+    if (params?.offset !== undefined) searchParams.set('offset', String(params.offset));
+    if (params?.q) searchParams.set('q', params.q);
+    const qs = searchParams.toString();
+    return request<HistoryItem[]>(`/history${qs ? `?${qs}` : ''}`, {
+      requiresAuth: true,
+    });
+  },
+
+  deleteHistory: async (id: string): Promise<void> => {
+    return request<void>(`/history/${encodeURIComponent(id)}`, {
       method: 'DELETE',
       requiresAuth: true,
     });

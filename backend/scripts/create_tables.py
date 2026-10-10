@@ -34,6 +34,9 @@ def create_tables():
         conn.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS admin_access BOOLEAN DEFAULT FALSE;"))
         conn.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS question_hash VARCHAR;"))
         conn.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS question_length INTEGER;"))
+        conn.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS question VARCHAR;"))
+        conn.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS outcome VARCHAR;"))
+        conn.execute(text("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS source_count INTEGER;"))
         # Backfill existing event -> event_type and ts -> created_at if NULL
         conn.execute(text("UPDATE audit_log SET event_type = event WHERE event_type IS NULL AND event IS NOT NULL;"))
         conn.execute(text("UPDATE audit_log SET created_at = ts WHERE created_at IS NULL AND ts IS NOT NULL;"))

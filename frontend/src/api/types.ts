@@ -255,3 +255,14 @@ export interface AdminUploadItem {
   created_at: string;
   updated_at: string;
 }
+
+export interface HistoryItem {
+  id: string;
+  question: string;
+  created_at: string;
+  outcome: 'answered' | 'refused';
+  source_count: number;
+  user_name?: string | null;
+  department?: string | null;
+}
+
