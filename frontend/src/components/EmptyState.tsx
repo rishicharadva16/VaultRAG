@@ -39,12 +39,12 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onSelectQuestion }) => {
 
   return (
     <div className="flex flex-col items-center justify-center py-10 px-4 text-center max-w-2xl mx-auto animate-in fade-in duration-200">
-      {/* Gradient Shield Icon */}
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient text-white mb-5 shadow-lg shadow-accent/20">
+      {/* Shield Icon */}
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-accent-contrast mb-5 shadow-xs">
         <ShieldCheck size={32} aria-hidden="true" />
       </div>
 
-      <h2 className="font-heading text-2xl sm:text-3xl font-bold text-text tracking-tight">
+      <h2 className="text-2xl sm:text-3xl font-bold text-text tracking-tight">
         Hi {firstName}
       </h2>
       <p className="mt-2 text-sm text-text-muted max-w-md leading-relaxed">

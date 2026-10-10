@@ -39,8 +39,8 @@ export const CitationChip: React.FC<CitationChipProps> = ({
           aria-label={`Citation [${citation.id}]: ${citation.file}`}
           className={`inline-flex items-center justify-center font-mono text-xs px-2 py-0.5 rounded-badge font-semibold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${
             isSelected
-              ? 'bg-brand-gradient text-white border-transparent shadow-sm scale-105'
-              : 'bg-primary-soft text-primary border-primary/20 hover:bg-primary/20 hover:border-primary/40'
+              ? 'bg-accent text-accent-contrast border-transparent shadow-xs scale-105'
+              : 'bg-primary-soft text-accent border-accent/20 hover:bg-primary/20 hover:border-accent/40'
           }`}
           data-testid={`citation-marker-${citation.id}`}
         >

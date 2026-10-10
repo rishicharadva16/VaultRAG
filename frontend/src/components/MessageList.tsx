@@ -40,19 +40,19 @@ export const MessageList: React.FC<MessageListProps> = ({
     <div className={`space-y-6 pb-4 ${className}`} aria-live="polite">
       {messages.map((msg) => (
         <div key={msg.id} className="space-y-4">
-          {/* User Question: Right-aligned indigo gradient bubble */}
+          {/* User Question: Right-aligned blue bubble */}
           <div className="flex items-start gap-3 justify-end animate-in fade-in duration-150">
-            <div className="max-w-[85%] sm:max-w-[75%] rounded-card bg-gradient-to-r from-primary to-indigo-600 p-4 text-sm text-white shadow-sm">
+            <div className="max-w-[85%] sm:max-w-[75%] rounded-card bg-accent p-4 text-sm text-accent-contrast shadow-xs">
               <p className="leading-relaxed whitespace-pre-wrap font-medium">{msg.question}</p>
             </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-accent text-white shadow-xs">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-accent-contrast shadow-xs">
               <User size={16} aria-hidden="true" />
             </div>
           </div>
 
           {/* AI Response or Waiting State */}
           <div className="flex items-start gap-3 justify-start animate-in fade-in duration-200">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 border border-border text-primary shadow-xs">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 border border-border text-accent shadow-xs">
               <ShieldCheck size={20} aria-hidden="true" />
             </div>
 

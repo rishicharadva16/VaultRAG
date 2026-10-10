@@ -45,13 +45,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantClasses = {
       primary:
-        'bg-brand-gradient text-white shadow-sm hover:shadow-md hover:brightness-105 active:brightness-95',
+        'bg-accent hover:bg-accent-hover text-accent-contrast shadow-xs transition-colors',
       secondary:
         'bg-surface-2 hover:bg-border text-text border border-border shadow-xs hover:border-border-subtle',
       ghost:
         'bg-transparent hover:bg-surface-2 text-text-muted hover:text-text',
       danger:
-        'bg-danger text-white shadow-xs hover:bg-danger/90 hover:shadow-sm active:bg-danger/95',
+        'bg-danger text-white shadow-xs hover:bg-danger/90 active:bg-danger/95',
     }[variant];
 
     return (

@@ -528,7 +528,7 @@ export const DocumentsPage: React.FC = () => {
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-border">
                       <div
-                        className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-150"
+                        className="h-full bg-accent transition-all duration-150"
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>

@@ -367,7 +367,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                           aria-selected={false}
                         >
                           <div className="flex items-center gap-2.5 truncate">
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-accent text-[10px] font-bold text-white">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-contrast">
                               {getInitials(u.name)}
                             </span>
                             <span className="font-medium text-text">{u.name}</span>
@@ -514,7 +514,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 {/* Document Owner Row (Always visible, non-removable) */}
                 <li className="flex items-center justify-between p-2.5 rounded-btn bg-surface-2 border border-border-subtle text-xs">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-accent text-[11px] font-bold text-white">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-contrast">
                       {getInitials(document.owner.name)}
                     </span>
                     <div className="truncate">

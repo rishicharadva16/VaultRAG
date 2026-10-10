@@ -23,17 +23,17 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     >
       <div className="space-y-1">
         {breadcrumb && (
-          <div className="text-xs font-semibold uppercase tracking-wider text-primary">
+          <div className="text-xs font-semibold uppercase tracking-wider text-accent">
             {breadcrumb}
           </div>
         )}
         <div className="flex items-center gap-3">
           {icon && (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-btn bg-brand-gradient text-white shadow-xs">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-btn bg-accent text-accent-contrast shadow-xs">
               {icon}
             </div>
           )}
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-text">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-text">
             {title}
           </h1>
         </div>

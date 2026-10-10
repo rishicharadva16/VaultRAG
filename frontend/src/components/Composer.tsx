@@ -99,7 +99,7 @@ export const Composer: React.FC<ComposerProps> = ({
               onClick={onSend}
               disabled={isEmpty || isTooLong || disabled}
               aria-label="Send question"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-gradient text-white shadow-sm hover:shadow-md hover:scale-105 active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-accent hover:bg-accent-hover text-accent-contrast shadow-xs disabled:opacity-35 disabled:cursor-not-allowed transition-colors outline-hidden focus-visible:ring-2 focus-visible:ring-focus-ring cursor-pointer"
               data-testid="send-button"
             >
               <ArrowUp size={18} strokeWidth={2.5} aria-hidden="true" />

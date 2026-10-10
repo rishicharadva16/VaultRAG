@@ -21,9 +21,9 @@ export const StatCard: React.FC<StatCardProps> = ({
   value,
   subValue,
   icon,
-  iconBg = 'bg-primary-soft text-primary',
+  iconBg = 'bg-primary-soft text-accent',
   sparklineData,
-  sparklineColor = '#4F46E5',
+  sparklineColor = '#2563eb',
   trend,
   testId,
   className = '',
@@ -69,7 +69,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       data-testid={testId || (rest as Record<string, unknown>)['data-testid'] as string | undefined}
-      className={`rounded-card border border-border bg-surface p-4 sm:p-5 shadow-sm transition-all duration-150 hover:shadow-md hover:border-border-subtle ${className}`}
+      className={`rounded-card border border-border bg-surface p-4 sm:p-5 shadow-xs transition-colors hover:border-border-subtle ${className}`}
       {...rest}
     >
       <div className="flex items-start justify-between gap-3">
@@ -78,7 +78,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             {label}
           </p>
           <div className="flex items-baseline gap-2">
-            <span className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-text">
+            <span className="text-2xl sm:text-3xl font-bold tracking-tight text-text">
               {value}
             </span>
             {subValue && (

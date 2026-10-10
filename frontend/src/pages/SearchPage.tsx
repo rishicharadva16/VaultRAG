@@ -228,7 +228,7 @@ export const SearchPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading || !query.trim()}
-                  className="rounded-btn bg-brand-gradient px-4 py-2 text-xs font-semibold text-white shadow-xs hover:shadow-md hover:brightness-105 active:brightness-95 disabled:opacity-40 transition-all min-h-[36px]"
+                  className="rounded-btn bg-accent hover:bg-accent-hover px-4 py-2 text-xs font-semibold text-accent-contrast shadow-xs disabled:opacity-40 transition-colors min-h-[36px]"
                   data-testid="search-submit-button"
                 >
                   {isLoading ? 'Searching...' : 'Search'}
@@ -365,7 +365,7 @@ export const SearchPage: React.FC = () => {
                             <div className="hidden sm:flex items-center gap-1.5">
                               <div className="h-1.5 w-16 bg-surface-2 rounded-full overflow-hidden border border-border/40">
                                 <div
-                                  className="h-full bg-brand-gradient rounded-full"
+                                  className="h-full bg-accent rounded-full"
                                   style={{ width: `${scorePct}%` }}
                                 />
                               </div>

@@ -42,7 +42,7 @@ export const AnswerCard: React.FC<AnswerCardProps> = ({
 
   return (
     <article
-      className={`relative rounded-card border border-border bg-surface p-5 transition-all shadow-soft space-y-4 before:content-[""] before:absolute before:left-0 before:top-3 before:bottom-3 before:w-1.5 before:rounded-r before:bg-brand-gradient ${className}`}
+      className={`relative rounded-card border border-border bg-surface p-5 transition-all shadow-soft space-y-4 before:content-[""] before:absolute before:left-0 before:top-3 before:bottom-3 before:w-1.5 before:rounded-r before:bg-accent ${className}`}
       data-testid="answer-card"
     >
       {/* Top Header Row: Verified Answer pill, Response time chip, Copy button */}

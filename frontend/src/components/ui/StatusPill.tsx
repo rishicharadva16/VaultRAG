@@ -51,10 +51,10 @@ export const StatusPill: React.FC<StatusPillProps> = ({
       return (
         <span
           data-testid={tid}
-          className={`inline-flex items-center gap-1.5 rounded-badge bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-0.5 text-xs font-semibold text-cyan-700 dark:text-cyan-300 ${className}`}
+          className={`inline-flex items-center gap-1.5 rounded-badge bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-300 ${className}`}
           {...rest}
         >
-          <Clock size={13} className="shrink-0 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />
+          <Clock size={13} className="shrink-0 text-blue-600 dark:text-blue-400" aria-hidden="true" />
           <span>{label || 'Queued'}</span>
         </span>
       );

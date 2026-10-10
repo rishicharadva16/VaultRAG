@@ -687,7 +687,7 @@ export const UserManagementPage: React.FC = () => {
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
                               <div
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-accent font-bold text-white text-xs shadow-xs"
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-accent-contrast text-xs shadow-xs"
                                 aria-hidden="true"
                               >
                                 {getInitials(u.name, u.email)}
@@ -830,7 +830,7 @@ export const UserManagementPage: React.FC = () => {
                     <div className="flex items-start justify-between gap-2 min-w-0">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-accent font-bold text-white text-xs shadow-xs"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-accent-contrast text-xs shadow-xs"
                           aria-hidden="true"
                         >
                           {getInitials(u.name, u.email)}
